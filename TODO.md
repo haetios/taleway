@@ -2,9 +2,9 @@
 
 ## DEVELOPPEMENT
 
-- [x] Le gros du projet est mis en place
+- [x] Le gros du projet est mis en place (PoC)
 
-- [ ] Terminer reader de debug
+- [ ] Terminer reader de debug (PoC)
     - [ ] Modification de variables
     - [ ] Saut vers une page spécifique
     - [ ] Reader
@@ -12,10 +12,9 @@
         - [ ] Affichage des labels pour les fins
     - [ ] Compagnon d'inventaire
 
-- [ ] Montrer MVP à Miss.
-> Toujours partante pour échanger sur nos projets respectifs ?
-> Toujours partante pour monter quelque chose ensemble ?
-> On s'attaque à son projet en premier car c'est moi qui me suis proposé pour l'aider (code)
+- [ ] Confirmation du PoC
+> Toujours partant pour échanger sur nos projets respectifs ?
+> Toujours partant pour monter quelque chose ensemble ?
 
 - [ ] Migrer tout avec le nouveau style
 > En profiter pour réagencer le code
