@@ -7,5 +7,6 @@
   },
   "tailwindCSS.includeLanguages": {
     "css": "css"
-  }
+  },
+  "dbmlERDPreviewer.preferredTheme": "dark"
 }
