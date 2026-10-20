@@ -1,0 +1,7 @@
+- [ ] PENPOT (figma open source) - style papier, livre, bibliothèque, épuré, couleurs claires, ...
+- [ ] Ajouter une page d'inscription fonctionnelle
+- [ ] Ajouter une page de connexion fonctionnelle
+- [ ] Migrer le corps du site (xyflow + panneau + debug mode + lecteur)
+- [ ] Ajouter page d'accueil avec CTO et créations
+- [ ] Ajouter 3 romans interactifs fonctionnels (enquête, romance, horreur)
+- [ ] Mettre en production

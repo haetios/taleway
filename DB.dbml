@@ -1,0 +1,64 @@
+table profiles {
+    id uuid [pk]
+    username varchar(255) [unique, not null]
+    bio varchar(255)
+    created_at timestamp [not null]
+    updated_at timestamp [not null]
+}
+
+table stories {
+    id integer [pk]
+    profile_id uuid [ref: > profiles.id, not null]
+    title varchar(255) [not null]
+    slug varchar(255) [unique, not null]
+    description text
+    category categories
+    // tags tags[]
+    graph json [not null]
+    status story_status [not null, default: 'draft']
+    cover_url text
+    created_at timestamp [not null]
+    updated_at timestamp [not null]
+}
+
+table bookmarks {
+    id integer [pk]
+    profile_id uuid [ref: > profiles.id, not null]
+    story_id integer [ref: > stories.id, not null]
+    node_id text [not null]
+    variables json
+    created_at timestamp [not null]
+    updated_at timestamp [not null]
+
+    indexes {
+        (profile_id, story_id) [unique]
+    }
+}
+
+// table libraries {
+//     profile_id uuid [ref: > profiles.id]
+//     story_id integer [ref: > stories.id]
+//     acquired_at timestamp
+
+//     indexes {
+//         (profile_id, story_id) [unique]
+//     }
+// }
+
+// ------------
+
+enum story_status {
+  draft
+  published
+  archived
+}
+
+enum categories {
+    romance
+    horror
+    adventure
+    sci_fi
+    historical
+    detective
+    fantasy
+}
