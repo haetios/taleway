@@ -1,0 +1,61 @@
+### 400 expected - Missing email
+POST http://localhost:3000/api/auth
+Content-Type: application/json
+
+{
+    "email": ""
+}
+
+### 400 expected - Incorrect email
+POST http://localhost:3000/api/auth
+Content-Type: application/json
+
+{
+    "email": "toto@outlook"
+}
+
+### 201 expected - No error
+# @name signup
+POST http://localhost:3000/api/auth
+Content-Type: application/json
+
+{
+    "email": "toto@outlook.fr"
+}
+
+### 400 expected - Missing email
+POST http://localhost:3000/api/auth/verify
+Content-Type: application/json
+
+{
+    "email": "",
+    "token": "012345"
+}
+
+### 400 expected - Missing token
+POST http://localhost:3000/api/auth/verify
+Content-Type: application/json
+
+{
+    "email": "toto@outlook.fr",
+    "token": ""
+}
+
+### 401 expected - Incorrect token
+POST http://localhost:3000/api/auth/verify
+Content-Type: application/json
+
+{
+    "email": "toto@outlook.fr",
+    "token": "000000"
+}
+
+### 201 expected - No error
+POST http://localhost:3000/api/auth/verify
+Content-Type: application/json
+
+// Insert real token here
+{
+    "email": "toto@outlook.fr",
+    "token": ""
+}
