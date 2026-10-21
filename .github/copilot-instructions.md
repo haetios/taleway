@@ -35,12 +35,14 @@ Plateforme de **romans interactifs** (histoires à choix multiples, graphe de n�
 8. **Vite warning** ESM/CJS dans vitest.config.ts : bénin, ou `"type": "module"` dans package.json.
 9. **Zod `validateAsync` n'existe pas** : confusion Yup/zod (voir conventions).
 10. **Username "" valide** si `usernameRule` sans `.min()` → insérer un NOT NULL bizarre. Règles : ajouter longueur min.
+11. **FK `stories.profile_id` → 500 nu** : un utilisateur auth sans fiche `profiles` (OTP vérifié mais `POST /auth/profile` jamais fait) fait planter tout insert lié. Flux complet requis : auth → verify → **profile** → stories. Considérer un trigger `on_auth_user_created`.
+12. **Route Handler : le contexte ne peut PAS être en 1er argument**. Next passe TOUJOURS le request en position 0 ; `DELETE({ params })` seul → `{ params }` déstructure le request → `params` undefined → 500 "Cannot destructure property". Le request inutilisé doit rester déclaré (`_request`) ou être omis avec le contexte aussi. Vérifié par tests (26/26).
+13. **`request.json()` non attrapé = 500 nu** sur body non-JSON → helper `parseJsonBody` (`src/lib/parse-json-body.ts`) dans tous les handlers à body.
 
 ## Entretien de ce fichier (rôle de l'agent)
 
 - **Mise à jour immédiate** : dès qu'une erreur nouvelle est rencontrée et résolue (cause racine + fix en une ligne), l'agent l'ajoute à "Erreurs rencontrées & fixes" — pas le développeur.
 - **Après tout changement de convention** (handler, validation, test), refléter la convention dans "Conventions code".
-- **Compacité** : ce fichier ne doit pas dépasser ~150 lignes. Au-delà, extraire un domaine en fichier ciblé `.github/instructions/<domaine>.instructions.md` avec frontmatter `applyTo` (ex. `applyTo: src/app/api/**` pour les règles API).
 - **Format** : une ligne = un fait vérifié. Pas de prose, pas de "peut-être". Si une info devient fausse (version changée, API retirée), la corriger ou la supprimer — jamais laisser traîner du périmé.
 
 ## Commandes

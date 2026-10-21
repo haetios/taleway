@@ -1,0 +1,78 @@
+name: CI
+
+on:
+  push:
+    branches: [main, taleway_v2]
+  pull_request:
+    branches: [main, taleway_v2]
+
+jobs:
+  ci:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v7
+
+      - name: Setup pnpm
+        uses: pnpm/action-setup@v6
+        # lit le champ packageManager de package.json (pnpm 12)
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v7
+        with:
+          node-version: 24.22.1 # Active LTS "Krypton"
+          cache: pnpm
+
+      - name: Setup Supabase CLI
+        uses: supabase/setup-cli@v3
+        with:
+          version: latest
+
+      - name: Install dependencies
+        run: pnpm install --frozen-lockfile
+
+      - name: Lint
+        run: pnpm lint
+
+      - name: Start local Supabase
+        run: supabase start
+
+      - name: Wait for Supabase to be ready
+        run: |
+          timeout 60 bash -c 'until curl -sf http://127.0.0.1:54321/rest/v1/ -o /dev/null; do
+            echo "waiting for supabase..."; sleep 2
+          done'
+
+      # Les URLs et clés de la stack locale sont dérivées par Supabase lui-même :
+      # aucune valeur machine-dépendante ou sensible dans le repo.
+      # (noms vérifiés : supabase status -o env expose DB_URL, API_URL, PUBLISHABLE_KEY)
+      - name: Export Supabase env
+        run: |
+          status=$(supabase status -o env)
+          echo "DATABASE_URL=$(echo "$status" | grep '^DB_URL=' | cut -d= -f2- | tr -d '"')" >> "$GITHUB_ENV"
+          echo "NEXT_PUBLIC_SUPABASE_URL=$(echo "$status" | grep '^API_URL=' | cut -d= -f2- | tr -d '"')" >> "$GITHUB_ENV"
+          echo "NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY=$(echo "$status" | grep '^PUBLISHABLE_KEY=' | cut -d= -f2- | tr -d '"')" >> "$GITHUB_ENV"
+
+      - name: Run migrations
+        run: pnpm exec drizzle-kit migrate
+
+      - name: Start Next.js dev server
+        run: |
+          nohup pnpm dev > next-dev.log 2>&1 &
+          echo $! > next-dev.pid
+          timeout 90 bash -c 'until curl -sf http://localhost:3000 -o /dev/null; do
+            echo "waiting for next..."; sleep 2
+          done'
+
+      - name: Run tests
+        run: pnpm test
+
+      - name: Dump Next.js log on failure
+        if: failure()
+        run: tail -100 next-dev.log || true
+
+      - name: Stop dev server
+        if: always()
+        run: |
+          [ -f next-dev.pid ] && kill "$(cat next-dev.pid)" 2>/dev/null || true

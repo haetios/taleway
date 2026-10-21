@@ -7,19 +7,18 @@
 - [X] API : POST    /auth/profile
 - [X] TESTS : Réécrire `.http` dans `vitest`
 
-- [ ] TESTS : Ecrire les tests de `/stories/create`
-- [ ] API : POST    /stories
-- [ ] API : GET     /stories
+- [X] API : POST    /stories
 
-- [ ] TESTS : Ecrire les tests de `/stories/SLUG`
-- [ ] API : GET     /stories/SLUG
-- [ ] API : DELETE  /stories/SLUG
-- [ ] API : PUT     /stories/SLUG
+- [X] API : GET     /stories/SLUG
+- [X] API : DELETE  /stories/SLUG
+- [X] API : PUT     /stories/SLUG
 
-- [ ] TESTS : Ecrire les tests de `/stories`
+- [X] TESTS : Ecrire les tests de `/stories`
+- [X] TESTS : Ecrire les tests de `/stories/SLUG`
 - [ ] API : GET     /stories
             params :        category, author, title
             filter string used :    "@author", "#tag", ":category", "title"
+- [ ] TESTS : Ajouter des tests pour API -> GET `/stories`
 
 - [ ] TESTS : Ecrire les tests de `/profile`
 - [ ] API : GET     /profile/ID (public)

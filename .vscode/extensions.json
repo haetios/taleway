@@ -6,6 +6,8 @@
 		"antfu.iconify",               // Iconify IntelliSense
 		"bradlc.vscode-tailwindcss",   // Tailwind CSS IntelliSense
 		"shardulm94.trailing-spaces",  // Trailing Spaces
-		"matt-meyers.vscode-dbml"      // vscode-dbml
+		"matt-meyers.vscode-dbml",      // vscode-dbml
+		"humao.rest-client",
+		"vitest.explorer"
 	]
 }

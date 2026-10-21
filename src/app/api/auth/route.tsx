@@ -1,11 +1,14 @@
-import { emailRule } from "@/validations/rules/email";
 import { NextRequest, NextResponse } from "next/server";
 import { getSupabaseServerClient } from "@/lib/supabase";
+import { parseJsonBody } from "@/lib/parse-json-body";
+import { emailRule } from "@/validations/rules/email";
 
 export async function POST(request: NextRequest) {
-  const { email } = await request.json()
+  const body = await parseJsonBody(request)
+  if (body instanceof NextResponse) return body
 
-  const result = emailRule.safeParse(email)
+  // Vérification format
+  const result = emailRule.safeParse((body as { email?: string }).email)
 
   if (!result.success) {
     return NextResponse.json(
@@ -20,6 +23,7 @@ export async function POST(request: NextRequest) {
 
   const validEmail = result.data
 
+  // Inscription/Connexion
   const supabase = await getSupabaseServerClient()
 
   const { error } = await supabase.auth.signInWithOtp({

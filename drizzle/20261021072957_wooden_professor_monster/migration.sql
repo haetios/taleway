@@ -1,0 +1,1 @@
+ALTER TABLE "stories" RENAME COLUMN "description" TO "blurb";

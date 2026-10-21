@@ -25,10 +25,12 @@
     "@supabase/supabase-js": "^2.118.0",
     "dotenv": "^18.0.8",
     "drizzle-orm": "1.0.0-rc.4",
+    "nanoid": "^6.0.2",
     "next": "16.4.2",
     "postgres": "^3.4.9",
     "react": "19.3.0",
     "react-dom": "19.3.0",
+    "slugify": "^1.6.9",
     "zod": "^4.6.7"
   },
   "devDependencies": {
@@ -37,6 +39,7 @@
     "@types/pg": "^8.23.1",
     "@types/react": "^19",
     "@types/react-dom": "^19",
+    "@vitest/coverage-v8": "^5.0.5",
     "drizzle-kit": "1.0.0-rc.4",
     "eslint": "^9",
     "eslint-config-next": "16.4.2",

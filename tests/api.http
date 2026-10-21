@@ -1,7 +1,25 @@
-### 400 expected - Missing
-POST http://localhost:3000/api/stories
+// --------------------------------------------------------------------------------
+// ATTENTION: VEUILLEZ LAISSER CETTE PARTIE POUR POUVOIR TESTER
+
+### SETUP — session (à rejouer quand elle expire : code dans Mailpit)
+POST http://localhost:3000/api/auth
 Content-Type: application/json
 
-{
-    
-}
+{ "email" : "toto@outlook.fr" }
+
+### SETUP — session (à rejouer quand elle expire : code dans Mailpit)
+# @name verify
+POST http://localhost:3000/api/auth/verify
+Content-Type: application/json
+
+{ "email": "toto@outlook.fr", "token": "339388" }
+
+### SETUP — session (à rejouer quand elle expire : code dans Mailpit)
+POST http://localhost:3000/api/auth/profile
+Content-Type: application/json
+Cookie: {{verify.response.headers.set-cookie}}
+
+{ "username": "Toto" }
+
+// --------------------------------------------------------------------------------
+

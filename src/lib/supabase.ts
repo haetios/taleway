@@ -1,5 +1,6 @@
 import { createServerClient } from "@supabase/ssr"
 import { cookies } from "next/headers"
+import { NextResponse } from "next/server"
 
 export async function getSupabaseServerClient() {
   const cookieStore = await cookies()
@@ -24,4 +25,14 @@ export async function getSupabaseServerClient() {
       },
     }
   )
+}
+
+export function unauthorized(message?: string) {
+  return NextResponse.json({
+      title: 'Unauthorized',
+      status: 401,
+      detail: message ? message : 'You have to be authenticated'
+  }, {
+      status: 401
+  })
 }

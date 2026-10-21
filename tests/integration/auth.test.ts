@@ -1,27 +1,6 @@
 import { describe, expect, it, beforeAll } from "vitest";
 import { clearMailpit, getOtpCode } from "../helpers/mailpit";
-
-const BASE_URL = process.env.TEST_BASE_URL ?? "http://localhost:3000";
-
-/** Requête POST JSON utilitaire. */
-async function post(path: string, body: unknown, cookie?: string) {
-  const res = await fetch(`${BASE_URL}${path}`, {
-    method: "POST",
-    headers: {
-      "Content-Type": "application/json",
-      ...(cookie ? { Cookie: cookie } : {}),
-    },
-    body: JSON.stringify(body),
-  });
-  return { res, json: await res.json().catch(() => null) };
-}
-
-/** Extrait le cookie de session Supabase des headers d'une réponse. */
-function sessionCookie(res: Response): string {
-  const setCookie = res.headers.get("set-cookie");
-  if (!setCookie) throw new Error("Pas de set-cookie dans la réponse");
-  return setCookie;
-}
+import { post, sessionCookie } from "../helpers/auth";
 
 describe("POST /api/auth", () => {
   it("400 — email manquant", async () => {
@@ -35,10 +14,12 @@ describe("POST /api/auth", () => {
   });
 
   it("201 — envoie un code OTP", async () => {
-    const { res } = await post("/api/auth", { email: "vitest@taleway.dev" });
+    // Email unique par run : évite le rate limit Supabase sur les emails fixes
+    const email = `otp-${Date.now()}_${Math.random().toString(36).slice(2, 6)}@taleway.dev`;
+    const { res } = await post("/api/auth", { email });
     expect(res.status).toBe(201);
     // Le code doit être arrivé dans Mailpit
-    const code = await getOtpCode("vitest@taleway.dev");
+    const code = await getOtpCode(email);
     expect(code).toMatch(/^\d{6}$/);
   });
 });
@@ -58,11 +39,12 @@ describe("POST /api/auth/verify", () => {
   });
 
   it("200 — code correct, pose la session", async () => {
-    await post("/api/auth", { email: "vitest@taleway.dev" });
-    const code = await getOtpCode("vitest@taleway.dev");
+    const email = `verify-${Date.now()}_${Math.random().toString(36).slice(2, 6)}@taleway.dev`;
+    await post("/api/auth", { email });
+    const code = await getOtpCode(email);
 
     const { res } = await post("/api/auth/verify", {
-      email: "vitest@taleway.dev",
+      email,
       token: code,
     });
     expect(res.status).toBe(200);

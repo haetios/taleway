@@ -1,13 +1,14 @@
-import { db } from "@/db";
-import { profiles } from "@/db/schema";
-import { getSupabaseServerClient } from "@/lib/supabase";
+import { parseJsonBody } from "@/lib/parse-json-body";
+import { getSupabaseServerClient, unauthorized } from "@/lib/supabase";
 import { verifyOtpSchema } from "@/validations/schemas/verify-otp";
 import { NextRequest, NextResponse } from "next/server";
 
 export async function POST(request: NextRequest) {
-    const { email, token } = await request.json()
+    const body = await parseJsonBody(request)
+    if (body instanceof NextResponse) return body
 
-    const result = verifyOtpSchema.safeParse({ email, token })
+    // Vérification format
+    const result = verifyOtpSchema.safeParse(body)
 
     if (!result.success) {
         return NextResponse.json({
@@ -19,6 +20,7 @@ export async function POST(request: NextRequest) {
         })
     }
 
+    // Vérification token
     const supabase = await getSupabaseServerClient()
 
     const { error } = await supabase.auth.verifyOtp({
@@ -28,13 +30,7 @@ export async function POST(request: NextRequest) {
     })
 
     if (error) {
-        return NextResponse.json({
-            title: error.name,
-            status: 401,
-            detail: error.message
-        }, {
-            status: 401
-        })
+        return unauthorized(error.message)
     }
 
     return NextResponse.json(null, { status: 200 })

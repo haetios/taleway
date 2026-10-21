@@ -8,5 +8,7 @@
   "tailwindCSS.includeLanguages": {
     "css": "css"
   },
-  "dbmlERDPreviewer.preferredTheme": "dark"
+  "dbmlERDPreviewer.preferredTheme": "dark",
+  "github.copilot.chat.codeGeneration.useInstructionFiles": true,
+  "github.copilot.chat.customInstructionsInSystemMessage": true
 }
