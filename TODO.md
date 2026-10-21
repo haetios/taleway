@@ -1,6 +1,4 @@
 
-> Utilisation de la méthode TDD
-
 - [X] TESTS : Ecrire les tests de `/auth`
 - [X] API : POST    /auth
 - [X] API : POST    /auth/verify
