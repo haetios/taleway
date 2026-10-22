@@ -2,9 +2,11 @@ import { db } from "@/db";
 import { stories, StoryStatus } from "@/db/schema";
 import { parseJsonBody } from "@/lib/parse-json-body";
 import { buildSlug } from "@/lib/slug";
-import { getSupabaseServerClient, unauthorized } from "@/lib/supabase";
+import { authError, getSupabaseServerClient, internalServerError, unauthorized } from "@/lib/supabase";
+import { storyWithoutGraph } from "@/types/story-without-graph";
 import { titleRule } from "@/validations/rules/title";
 import { queryParamSchema } from "@/validations/schemas/query-params";
+import { isAuthApiError } from "@supabase/supabase-js";
 import { and, eq, inArray, like, ne, SQL } from "drizzle-orm";
 import { NextRequest, NextResponse } from "next/server";
 
@@ -20,7 +22,7 @@ export async function POST(request: NextRequest) {
         return NextResponse.json({
             title: 'Bad request',
             status: 400,
-            detail: 'The title is compulsory'
+            detail: 'Invalid title'
         }, {
             status: 400
         })
@@ -30,8 +32,15 @@ export async function POST(request: NextRequest) {
     const supabase = await getSupabaseServerClient()
     const { data: { user }, error } = await supabase.auth.getUser()
 
-    if (error || !user) {
-        return unauthorized()
+    if (!user) return unauthorized()
+    if (error) {
+        if (isAuthApiError(error) && error.status && error.status < 500) {
+            return authError(error.status, error.message)
+        }
+
+        console.error("[stories]", error)
+
+        return internalServerError()
     }
 
     // Vérification existence du titre
@@ -99,28 +108,9 @@ export async function GET(request: NextRequest) {
         conditions.push(inArray(stories.profileId, validQueryParams.authors))
     }
 
-    const storyList = await db.select({
-        id: stories.id,
-        profileId: stories.profileId,
-        title: stories.title,
-        slug: stories.slug,
-        blurb: stories.blurb,
-        category: stories.category,
-        status: stories.status,
-        coverUrl: stories.coverUrl,
-        createdAt: stories.createdAt,
-        updatedAt: stories.updatedAt,
-    })
+    const storyList = await db.select(storyWithoutGraph)
     .from(stories)
     .where(and(eq(stories.status, StoryStatus.published), ...conditions))
-
-    if (storyList.length === 0) {
-        return NextResponse.json({
-            data: []
-        }, {
-            status: 200
-        })
-    }
 
     return NextResponse.json({
         data: storyList

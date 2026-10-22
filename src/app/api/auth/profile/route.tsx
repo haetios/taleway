@@ -1,8 +1,9 @@
 import { db } from "@/db";
 import { profiles } from "@/db/schema";
 import { parseJsonBody } from "@/lib/parse-json-body";
-import { getSupabaseServerClient, unauthorized } from "@/lib/supabase";
+import { authError, getSupabaseServerClient, internalServerError, unauthorized } from "@/lib/supabase";
 import { usernameRule } from "@/validations/rules/username";
+import { isAuthApiError } from "@supabase/supabase-js";
 import { eq } from "drizzle-orm";
 import { NextRequest, NextResponse } from "next/server";
 
@@ -17,7 +18,7 @@ export async function POST(request: NextRequest) {
         return NextResponse.json({
             title: 'Bad request',
             status: 400,
-            detail: result.error.issues[0].message
+            detail: 'Invalid username'
         }, {
             status: 400
         })
@@ -29,8 +30,15 @@ export async function POST(request: NextRequest) {
     const supabase = await getSupabaseServerClient()
     const { data: { user: currentUser }, error } = await supabase.auth.getUser()
 
-    if(!currentUser || error) {
-        return unauthorized()
+    if (!currentUser) return unauthorized()
+    if (error) {
+        if (isAuthApiError(error) && error.status && error.status < 500) {
+            return authError(error.status, error.message)
+        }
+
+        console.error("[auth/profile]", error)
+
+        return internalServerError()
     }
 
     // Vérification existence du pseudo
@@ -44,7 +52,7 @@ export async function POST(request: NextRequest) {
         return NextResponse.json({
             title: 'Conflict',
             status: 409,
-            detail: 'This username is already used'
+            detail: 'Username already used'
         }, {
             status: 409
         })

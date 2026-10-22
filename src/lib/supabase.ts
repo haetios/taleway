@@ -36,3 +36,23 @@ export function unauthorized(message?: string) {
       status: 401
   })
 }
+
+export function authError(status: number, message?: string) {
+  return NextResponse.json({
+      title: 'Auth error',
+      status: status,
+      detail: message
+  }, {
+      status: status
+  })
+}
+
+export function internalServerError(message?: string) {
+  return NextResponse.json({
+      title: 'Internal Server Error',
+      status: 500,
+      detail: message ? message : 'Internal Server Error'
+  }, {
+      status: 500
+  })
+}

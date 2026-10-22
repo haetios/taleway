@@ -1,5 +1,5 @@
 // --------------------------------------------------------------------------------
-// ATTENTION: VEUILLEZ LAISSER CETTE PARTIE POUR POUVOIR TESTER
+// ATTENTION: VEUILLEZ LAISSER CETTE PARTIE POUR POUVOIR TESTER MANUELLEMENT
 
 ### SETUP — session (à rejouer quand elle expire : code dans Mailpit)
 POST http://localhost:3000/api/auth

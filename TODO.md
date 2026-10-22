@@ -17,11 +17,13 @@
             filter string used :    "@author", "#tag", ":category", "title"
 - [X] TESTS : Ajouter des tests pour API -> GET `/stories`
 
-- [ ] TESTS : Ecrire les tests de `/profile`
-- [ ] API : GET     /profile/ID (public)
+- [X] API : GET     /profile/stories
+- [X] API : GET     /profile/ID
+- [X] TESTS : Ecrire les tests de `/profile`
+
 - [ ] API : GET     /profile/settings
-- [ ] API : PUT     /profile/settings/edit
-- [ ] API : GET     /profile/stories
+- [ ] API : PUT     /profile/settings
+- [X] TESTS : Ajouter des tests pour API -> GET/PUT `/profile/settings`
 
 ---
 

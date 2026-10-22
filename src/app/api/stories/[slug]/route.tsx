@@ -1,9 +1,10 @@
 import { db } from "@/db";
 import { stories, Story, StoryStatus } from "@/db/schema";
 import { parseJsonBody } from "@/lib/parse-json-body";
-import { getSupabaseServerClient, unauthorized } from "@/lib/supabase";
+import { authError, getSupabaseServerClient, internalServerError, unauthorized } from "@/lib/supabase";
 import { slugRule } from "@/validations/rules/slug";
 import { editStorySchema } from "@/validations/schemas/edit-story";
+import { isAuthApiError } from "@supabase/supabase-js";
 import { and, eq, ne, or } from "drizzle-orm";
 import { NextRequest, NextResponse } from "next/server"
 
@@ -37,10 +38,16 @@ export async function GET(
     // Vérification story
     let story: Story | Omit<Story, 'graph'>
 
-
     if (validWithGraph) { // Lecture & édition
-        if (!user || error) {
-            return unauthorized()
+        if (!user) return unauthorized()
+        if (error) {
+            if (isAuthApiError(error) && error.status && error.status < 500) {
+                return authError(error.status, error.message)
+            }
+
+            console.error("[stories/[slug]]", error)
+
+            return internalServerError()
         }
 
         //// Si draft et à l'utilisateur
@@ -88,7 +95,7 @@ export async function GET(
         return NextResponse.json({
             title: 'Not found',
             status: 404,
-            detail: 'No story found'
+            detail: 'Story not found'
         }, {
             status: 404
         })
@@ -131,7 +138,7 @@ export async function PUT(
         return NextResponse.json({
             title: 'Bad request',
             status: 400,
-            detail: resultSlug.error.issues[0].message
+            detail: 'Invalid slug'
         }, {
             status: 400
         })
@@ -144,8 +151,15 @@ export async function PUT(
     const supabase = await getSupabaseServerClient()
     const { data: { user }, error } = await supabase.auth.getUser()
 
-    if (!user || error) {
-        return unauthorized()
+    if (!user) return unauthorized()
+    if (error) {
+        if (isAuthApiError(error) && error.status && error.status < 500) {
+            return authError(error.status, error.message)
+        }
+
+        console.error("[stories/[slug]]", error)
+
+        return internalServerError()
     }
 
     // Vérification existence d'une histoire ayant le même titre pour l'utilisateur courant
@@ -188,7 +202,7 @@ export async function PUT(
         return NextResponse.json({
             title: 'Not found',
             status: 404,
-            detail: 'No story found'
+            detail: 'Story not found'
         }, {
             status: 404
         })
@@ -199,7 +213,7 @@ export async function PUT(
 
 // request inutilisé mais REQUIS en 1er argument : Next le passe toujours
 // en position 0 ; sans lui, { params } déstructurerait le request → 500.
-export async function DELETE(_request: NextRequest, { params }: { params: Promise<{ slug: string }> }) {
+export async function DELETE(_: NextRequest, { params }: { params: Promise<{ slug: string }> }) {
     const { slug } = await params
 
     const result = slugRule.safeParse(slug)
@@ -220,8 +234,15 @@ export async function DELETE(_request: NextRequest, { params }: { params: Promis
     const supabase = await getSupabaseServerClient()
     const { data: { user }, error } = await supabase.auth.getUser()
 
-    if (!user || error) {
-        return unauthorized()
+    if (!user) return unauthorized()
+    if (error) {
+        if (isAuthApiError(error) && error.status && error.status < 500) {
+            return authError(error.status, error.message)
+        }
+
+        console.error("[stories/[slug]]", error)
+
+        return internalServerError()
     }
 
     const [deletedStory] = await db
@@ -239,7 +260,7 @@ export async function DELETE(_request: NextRequest, { params }: { params: Promis
         return NextResponse.json({
             title: 'Not found',
             status: 404,
-            detail: 'No story found'
+            detail: 'Story not found'
         }, {
             status: 404
         })

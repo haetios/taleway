@@ -4,7 +4,7 @@
  * Les fichiers de test restent isolés : jouables seuls ou tous ensemble.
  */
 
-import { clearMailpit, getOtpCode } from "./mailpit";
+import { getOtpCode } from "./mailpit";
 
 const BASE_URL = process.env.TEST_BASE_URL ?? "http://localhost:3000";
 
@@ -43,7 +43,8 @@ export async function createTestUser(prefix = "test"): Promise<TestUser> {
   const email = `${prefix}-${runId}@taleway.dev`;
   const username = `${prefix}_${runId}`;
 
-  await clearMailpit();
+  // Pas de clearMailpit() ici : il effacerait les OTP en vol des autres
+  // fichiers de test tournant en parallèle (emails uniques → inutile de vider).
 
   await post("/api/auth", { email });
   const code = await getOtpCode(email);

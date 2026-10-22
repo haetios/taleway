@@ -7,6 +7,7 @@ import { titleRule } from "./title";
 import { usernameRule } from "./username";
 import { coverRule } from "./cover"
 import { graphRule } from "./graph"
+import { profileIdRule } from "./profile-id"
 
 export {
     blurbRule,
@@ -17,5 +18,6 @@ export {
     titleRule,
     usernameRule,
     coverRule,
-    graphRule
+    graphRule,
+    profileIdRule
 }

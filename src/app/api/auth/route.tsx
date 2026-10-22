@@ -1,6 +1,6 @@
 import { isAuthApiError } from "@supabase/supabase-js";
 import { NextRequest, NextResponse } from "next/server";
-import { getSupabaseServerClient } from "@/lib/supabase";
+import { authError, getSupabaseServerClient, internalServerError } from "@/lib/supabase";
 import { parseJsonBody } from "@/lib/parse-json-body";
 import { emailRule } from "@/validations/rules/email";
 
@@ -35,27 +35,13 @@ export async function POST(request: NextRequest) {
   })
 
   if (error) {
-    // Erreur imputable au client (rate limit...) : statut GoTrue relayé (429...)
     if (isAuthApiError(error) && error.status && error.status < 500) {
-      return NextResponse.json({
-        title: "Auth error",
-        status: error.status,
-        detail: error.message
-      }, {
-        status: error.status
-      })
+      return authError(error.status, error.message)
     }
 
-    // Vraie erreur serveur : log local, message générique au client
     console.error("[auth]", error)
 
-    return NextResponse.json({
-        title: "Internal server error",
-        status: 500,
-        detail: 'Internal server error'
-      }, {
-        status: 500
-      })
+    return internalServerError()
   }
 
   return NextResponse.json(null, { status: 201 })

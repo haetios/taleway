@@ -1,6 +1,6 @@
 import { isAuthApiError } from "@supabase/supabase-js";
 import { parseJsonBody } from "@/lib/parse-json-body";
-import { getSupabaseServerClient } from "@/lib/supabase";
+import { authError, getSupabaseServerClient, internalServerError } from "@/lib/supabase";
 import { verifyOtpSchema } from "@/validations/schemas/verify-otp";
 import { NextRequest, NextResponse } from "next/server";
 
@@ -31,28 +31,13 @@ export async function POST(request: NextRequest) {
     })
 
     if (error) {
-        // Erreur imputable au client (code faux/expiré 403, rate limit 429...) :
-        // statut GoTrue relayé tel quel
         if (isAuthApiError(error) && error.status && error.status < 500) {
-            return NextResponse.json({
-                title: 'Auth error',
-                status: error.status,
-                detail: error.message
-            }, {
-                status: error.status
-            })
+            return authError(error.status, error.message)
         }
 
-        // Vraie erreur serveur : log local, message générique au client
         console.error("[auth/verify]", error)
 
-        return NextResponse.json({
-            title: 'Internal server error',
-            status: 500,
-            detail: 'Internal server error'
-        }, {
-            status: 500
-        })
+        return internalServerError()
     }
 
     return NextResponse.json(null, { status: 200 })
