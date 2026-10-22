@@ -4,7 +4,7 @@ import { parseJsonBody } from "@/lib/parse-json-body";
 import { getSupabaseServerClient, unauthorized } from "@/lib/supabase";
 import { slugRule } from "@/validations/rules/slug";
 import { editStorySchema } from "@/validations/schemas/edit-story";
-import { and, eq, or } from "drizzle-orm";
+import { and, eq, ne, or } from "drizzle-orm";
 import { NextRequest, NextResponse } from "next/server"
 
 export async function GET(
@@ -35,7 +35,7 @@ export async function GET(
     const { data: { user }, error } = await supabase.auth.getUser()
 
     // Vérification story
-    let story: Story | Partial<Story>
+    let story: Story | Omit<Story, 'graph'>
 
 
     if (validWithGraph) { // Lecture & édition
@@ -156,7 +156,8 @@ export async function PUT(
         .where(
             and(
                 eq(stories.title, validBody.title),
-                eq(stories.profileId, user.id)
+                eq(stories.profileId, user.id),
+                ne(stories.slug, validSlug)
             )
         ).limit(1)
 

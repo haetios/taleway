@@ -9,7 +9,7 @@ Plateforme de **romans interactifs** (histoires à choix multiples, graphe de n�
 ## Règles de travail
 
 - **Après TOUT changement d'API/route** : `pnpm test` (les tests tapent le dev server sur :3000 + Supabase local). Prérequis : `next dev` lancé, `pnpm db:start` fait.
-- **Après tout changement de `src/db/schema.ts`** : `pnpm db:gen` PUIS copier le SQL généré (`drizzle/<nouveau dossier>/migration.sql`) dans `supabase/migrations/NNNN_nom.sql` — sinon `pnpm db:reset` ne rejoue pas le schéma et la base finit VIDE.
+- **Après tout changement de `src/db/schema.ts`** : `pnpm db:gen` (historique versionné dans `drizzle/`) — le schéma est appliqué par `drizzle-kit push` (`pnpm db:push` ou `pnpm db:reset`), PAS par des SQL copiés dans supabase (dossier migrations supprimé, workflow à une seule source de vérité).
 - Tests **idempotents** : identifiants uniques par run (`Date.now()`), car la base est réelle et partagée entre les runs. Jamais d'email/username fixes dans les tests d'écriture.
 - REST : méthodes HTTP = verbes. Un fichier `route.tsx` par ressource, exports GET/POST/PUT/DELETE dedans. Pas d'URL `/create|/delete|/edit`. Logique métier extraite dans `services/` si le handler grossit.
 - Tests : couvrir les **comportements** (statuts 201/400/401/403/404/409, cas limites métier), pas chaque champ manquant (un seul cas de validation suffit — même chemin zod).
@@ -44,13 +44,14 @@ Plateforme de **romans interactifs** (histoires à choix multiples, graphe de n�
 - **Mise à jour immédiate** : dès qu'une erreur nouvelle est rencontrée et résolue (cause racine + fix en une ligne), l'agent l'ajoute à "Erreurs rencontrées & fixes" — pas le développeur.
 - **Après tout changement de convention** (handler, validation, test), refléter la convention dans "Conventions code".
 - **Format** : une ligne = un fait vérifié. Pas de prose, pas de "peut-être". Si une info devient fausse (version changée, API retirée), la corriger ou la supprimer — jamais laisser traîner du périmé.
+- **Style des réponses** : concis et clair en permanence (minimiser les tokens). Revues de code sous forme de tableau avec code couleur : 🟡 jaune (cosmétique), 🟠 orange (à corriger), 🔴 rouge (bug/bloquant).
 
 ## Commandes
 
 ```
 pnpm dev          # next dev :3000 (prérequis tests)
 pnpm db:start     # supabase local (db :54322, API :54321, studio :54323, mailpit :54324)
-pnpm db:reset     # recrée tout : tables + seed + auth.users purgés (sessions invalidées)
+pnpm db:reset     # recrée tout (supabase stop/start) + drizzle-kit push (schéma depuis schema.ts) + purge auth.users (sessions invalidées)
 pnpm db:gen       # drizzle-kit generate → copier migration.sql dans supabase/migrations/
 pnpm test         # vitest run (intégration : tests/integration/)
 pnpm test:watch

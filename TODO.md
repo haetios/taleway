@@ -1,4 +1,3 @@
-
 - [X] TESTS : Ecrire les tests de `/auth`
 - [X] API : POST    /auth
 - [X] API : POST    /auth/verify
@@ -13,15 +12,16 @@
 
 - [X] TESTS : Ecrire les tests de `/stories`
 - [X] TESTS : Ecrire les tests de `/stories/SLUG`
-- [ ] API : GET     /stories
+- [X] API : GET     /stories
             params :        category, author, title
             filter string used :    "@author", "#tag", ":category", "title"
-- [ ] TESTS : Ajouter des tests pour API -> GET `/stories`
+- [X] TESTS : Ajouter des tests pour API -> GET `/stories`
 
 - [ ] TESTS : Ecrire les tests de `/profile`
 - [ ] API : GET     /profile/ID (public)
 - [ ] API : GET     /profile/settings
 - [ ] API : PUT     /profile/settings/edit
+- [ ] API : GET     /profile/stories
 
 ---
 

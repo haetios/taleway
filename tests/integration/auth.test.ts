@@ -30,12 +30,12 @@ describe("POST /api/auth/verify", () => {
     expect(res.status).toBe(400);
   });
 
-  it("401 — code erroné", async () => {
+  it("403 — code erroné (statut GoTrue relayé)", async () => {
     const { res } = await post("/api/auth/verify", {
       email: "vitest@taleway.dev",
       token: "000000",
     });
-    expect(res.status).toBe(401);
+    expect(res.status).toBe(403);
   });
 
   it("200 — code correct, pose la session", async () => {

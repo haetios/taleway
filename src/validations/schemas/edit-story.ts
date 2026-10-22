@@ -1,7 +1,5 @@
 import z from "zod";
-import { categoryRule, titleRule, blurbRule, statusRule } from "../rules";
-import { graphRule } from "../rules/graph";
-import { coverRule } from "../rules/cover";
+import { categoryRule, titleRule, blurbRule, statusRule, graphRule, coverRule } from "../rules";
 
 export const editStorySchema = z.object({
     title: titleRule.optional(),

@@ -71,7 +71,7 @@ export async function POST(request: NextRequest) {
 export async function GET(request: NextRequest) {
     const queryParams = request.nextUrl.searchParams
 
-    const result = queryParamSchema.safeParse(queryParams)
+    const result = queryParamSchema.safeParse(Object.fromEntries(queryParams))
 
     if (!result.success) {
         return NextResponse.json({
