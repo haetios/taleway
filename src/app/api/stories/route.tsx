@@ -4,7 +4,8 @@ import { parseJsonBody } from "@/lib/parse-json-body";
 import { buildSlug } from "@/lib/slug";
 import { getSupabaseServerClient, unauthorized } from "@/lib/supabase";
 import { titleRule } from "@/validations/rules/title";
-import { and, eq, ne } from "drizzle-orm";
+import { queryParamSchema } from "@/validations/schemas/query-params";
+import { and, eq, inArray, like, ne, SQL } from "drizzle-orm";
 import { NextRequest, NextResponse } from "next/server";
 
 export async function POST(request: NextRequest) {
@@ -67,6 +68,63 @@ export async function POST(request: NextRequest) {
     return NextResponse.json({ data: createdStory }, { status: 201 })
 }
 
-export async function GET() {
-    // TODO
+export async function GET(request: NextRequest) {
+    const queryParams = request.nextUrl.searchParams
+
+    const result = queryParamSchema.safeParse(queryParams)
+
+    if (!result.success) {
+        return NextResponse.json({
+            title: 'Bad request',
+            status: 400,
+            detail: 'Incorrect query params'
+        }, {
+            status: 400
+        })
+    }
+
+    const validQueryParams = result.data
+
+    const conditions: SQL[] = []
+
+    if (validQueryParams.title) {
+        conditions.push(like(stories.title, '%' + validQueryParams.title + '%'))
+    }
+
+    if (validQueryParams.categories) {
+        conditions.push(inArray(stories.category, validQueryParams.categories))
+    }
+
+    if (validQueryParams.authors) {
+        conditions.push(inArray(stories.profileId, validQueryParams.authors))
+    }
+
+    const storyList = await db.select({
+        id: stories.id,
+        profileId: stories.profileId,
+        title: stories.title,
+        slug: stories.slug,
+        blurb: stories.blurb,
+        category: stories.category,
+        status: stories.status,
+        coverUrl: stories.coverUrl,
+        createdAt: stories.createdAt,
+        updatedAt: stories.updatedAt,
+    })
+    .from(stories)
+    .where(and(eq(stories.status, StoryStatus.published), ...conditions))
+
+    if (storyList.length === 0) {
+        return NextResponse.json({
+            data: []
+        }, {
+            status: 200
+        })
+    }
+
+    return NextResponse.json({
+        data: storyList
+    }, {
+        status: 200
+    })
 }
