@@ -45,7 +45,7 @@ export async function GET(
                 return authError(error.status, error.message)
             }
 
-            console.error("[stories/[slug]]", error)
+            console.error("[story/[slug]]", error)
 
             return internalServerError()
         }
@@ -157,7 +157,7 @@ export async function PUT(
             return authError(error.status, error.message)
         }
 
-        console.error("[stories/[slug]]", error)
+        console.error("[story/[slug]]", error)
 
         return internalServerError()
     }
@@ -240,7 +240,7 @@ export async function DELETE(_: NextRequest, { params }: { params: Promise<{ slu
             return authError(error.status, error.message)
         }
 
-        console.error("[stories/[slug]]", error)
+        console.error("[story/[slug]]", error)
 
         return internalServerError()
     }

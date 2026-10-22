@@ -38,7 +38,7 @@ export async function POST(request: NextRequest) {
             return authError(error.status, error.message)
         }
 
-        console.error("[stories]", error)
+        console.error("[story]", error)
 
         return internalServerError()
     }

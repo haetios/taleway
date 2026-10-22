@@ -21,7 +21,8 @@ Plateforme de **romans interactifs** (histoires à choix multiples, graphe de n�
 - **Auth** : session via cookies `@supabase/ssr` (`src/lib/supabase.ts`). Écritures → `supabase.auth.getUser()` (revalide côté serveur), jamais `getSession()`. Relayage erreurs GoTrue : `isAuthApiError(error) && error.status < 500` → relayer le statut (400/401/403/429) ; sinon 500 générique (jamais `error.message` brut au client, `console.error` côté serveur).
 - **Drizzle v1.0-rc** (≠ 0.x !) : pas d'export `drizzle` racine — driver explicite (`drizzle-orm/postgres-js`). `timestamp()` modes : `'date'` (défaut, JS Date) | `'string'` — `timestamp_ms` n'existe plus. Colonnes snake_case explicites (`uuid('profile_id')`) ou `snakeCase.table()`. `extraConfig` de `pgTable` = **tableau**, pas objet : `(t) => [uniqueIndex().on(...)]`. Select : `db.select({ col: table.col })` — JAMAIS une string/variable brute à la place de l'objet colonne (erreur 500 silencieuse).
 - Auth passwordless : **OTP par email** (code 6 chiffres), pas de mot de passe, pas de magic link. `signInWithOtp({ email, options: { shouldCreateUser: true } })` → `verifyOtp({ email, token, type: "email" })`. `profiles.id` = `auth.users.id` (l'id vient de la session, pas de `defaultRandom`).
-- Validation : règles dans `src/validations/rules/` (atomiques, réutilisées), schemas composites dans `src/validations/schemas/`.
+- Validation : règles dans `src/validations/rules/` (atomiques, réutilisées), schemas composites dans `src/validations/schemas/`. Mono-champ → cast étroit inline + règle atomique (`(body as { x?: string }).x`) ; multi-champs → schema composite dans `schemas/`.
+- **`graphRule` = `z.json()` volontairement permissif** : le format du graphe sera défini par **xyflow (ReactFlow)** dans les pages "studio" — pas avant. Ne pas durcir la validation tant que le studio n'est pas créé.
 
 ## Erreurs rencontrées & fixes (ne pas reproduire)
 

@@ -4,7 +4,7 @@ import { request } from "../helpers/http";
 
 /** Crée une story et retourne son slug. */
 async function createStory(title: string, cookie: string): Promise<string> {
-  const { res, json } = await post("/api/stories", { title }, cookie);
+  const { res, json } = await post("/api/story", { title }, cookie);
   if (res.status !== 201) throw new Error(`createStory échoué: ${res.status}`);
   return json.data.slug as string;
 }
@@ -32,9 +32,9 @@ describe("GET /api/profile/[id] — profil existant", () => {
     user = await createTestUser("profpub");
     // Pas d'endpoint "me" : on récupère profileId via une story créée par user
     // (PUT /stories/[slug] renvoie la row complète, profileId inclus)
-    const { json } = await post("/api/stories", { title: `Id carrier ${user.username}` }, user.cookie);
+    const { json } = await post("/api/story", { title: `Id carrier ${user.username}` }, user.cookie);
     const slug = json.data.slug as string;
-    const { res, json: storyJson } = await request(`/api/stories/${slug}`, "PUT", { status: "published" }, user.cookie);
+    const { res, json: storyJson } = await request(`/api/story/${slug}`, "PUT", { status: "published" }, user.cookie);
     expect(res.status).toBe(200);
     profileId = storyJson.data.profileId as string;
   });
@@ -60,11 +60,11 @@ describe("GET /api/profile/stories", () => {
     void draftSlug;
 
     const pubSlug = await createStory(`Publiée ${user.username}`, user.cookie);
-    const { res: pubRes } = await request(`/api/stories/${pubSlug}`, "PUT", { status: "published" }, user.cookie);
+    const { res: pubRes } = await request(`/api/story/${pubSlug}`, "PUT", { status: "published" }, user.cookie);
     expect(pubRes.status).toBe(200);
 
     const archSlug = await createStory(`Archivée ${user.username}`, user.cookie);
-    const { res: delRes } = await request(`/api/stories/${archSlug}`, "DELETE", undefined, user.cookie);
+    const { res: delRes } = await request(`/api/story/${archSlug}`, "DELETE", undefined, user.cookie);
     expect(delRes.status).toBe(204);
 
     // Une story d'un autre auteur, non listée

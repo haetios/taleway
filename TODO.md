@@ -21,9 +21,15 @@
 - [X] API : GET     /profile/ID
 - [X] TESTS : Ecrire les tests de `/profile`
 
+- [X] API : GET     /bookmark/SLUG
+- [X] API : DELETE  /bookmark/SLUG
+- [X] TESTS : Ecrire les tests de `/bookmark/SLUG`
+- [ ] API : POST    /bookmark
+- [ ] TESTS : Ajouter des tests pour API -> POST `/bookmark`
+
 - [ ] API : GET     /profile/settings
 - [ ] API : PUT     /profile/settings
-- [X] TESTS : Ajouter des tests pour API -> GET/PUT `/profile/settings`
+- [ ] TESTS : Ajouter des tests pour API -> GET/PUT `/profile/settings`
 
 ---
 
@@ -31,7 +37,7 @@
 
 - [ ] Ajouter une page de connexion/inscription fonctionnelle
 - [ ] Migrer le corps du site (xyflow + panneau + debug mode + lecteur -> mode composant)
-- [ ] Ajouter page d'accueil avec CTO et créations
+- [ ] Ajouter page d'accueil avec CTO et romans
 - [ ] Ajouter page de profil et de paramètres
 
 - [ ] Ajouter 3 romans interactifs fonctionnels (enquête, romance, horreur)

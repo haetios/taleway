@@ -7,25 +7,25 @@ let otherUser: TestUser;
 
 /** Crée une story via l'API et retourne son slug. */
 async function createStory(title: string, cookie: string): Promise<string> {
-  const { res, json } = await post("/api/stories", { title }, cookie);
+  const { res, json } = await post("/api/story", { title }, cookie);
   if (res.status !== 201) throw new Error(`createStory échoué: ${res.status}`);
   return json.data.slug as string;
 }
 
-describe("GET /api/stories/[slug]", () => {
+describe("GET /api/story/[slug]", () => {
   it("400 — slug malformé", async () => {
-    const { res } = await request("/api/stories/PAS-VALIDE", "GET");
+    const { res } = await request("/api/story/PAS-VALIDE", "GET");
     expect(res.status).toBe(400);
   });
 
   it("404 — story inexistante", async () => {
-    const { res } = await request("/api/stories/inexistant-x4f9k2", "GET");
+    const { res } = await request("/api/story/inexistant-x4f9k2", "GET");
     expect(res.status).toBe(404);
   });
 
   it("401 — withGraph sans session", async () => {
     const { res } = await request(
-      "/api/stories/inexistant-x4f9k2?withGraph=true",
+      "/api/story/inexistant-x4f9k2?withGraph=true",
       "GET"
     );
     expect(res.status).toBe(401);
@@ -35,7 +35,7 @@ describe("GET /api/stories/[slug]", () => {
     const u = await createTestUser("slugdraft");
     const slug = await createStory(`Brouillon ${u.username}`, u.cookie);
     const { res, json } = await request(
-      `/api/stories/${slug}?withGraph=true`,
+      `/api/story/${slug}?withGraph=true`,
       "GET",
       undefined,
       u.cookie
@@ -49,7 +49,7 @@ describe("GET /api/stories/[slug]", () => {
   it("404 — draft invisible sans session (metadata)", async () => {
     const u = await createTestUser("slugdraft2");
     const slug = await createStory(`Brouillon caché ${u.username}`, u.cookie);
-    const { res } = await request(`/api/stories/${slug}`, "GET");
+    const { res } = await request(`/api/story/${slug}`, "GET");
     expect(res.status).toBe(404);
   });
 
@@ -58,7 +58,7 @@ describe("GET /api/stories/[slug]", () => {
     const slug = await createStory(`Publiée ${u.username}`, u.cookie);
     // Publication via PUT
     const { res: published } = await request(
-      `/api/stories/${slug}`,
+      `/api/story/${slug}`,
       "PUT",
       { status: "published" },
       u.cookie
@@ -66,7 +66,7 @@ describe("GET /api/stories/[slug]", () => {
     expect(published.status).toBe(200);
 
     // Lecture metadata sans session
-    const { res, json } = await request(`/api/stories/${slug}`, "GET");
+    const { res, json } = await request(`/api/story/${slug}`, "GET");
     expect(res.status).toBe(200);
     expect(json.data.status).toBe("published");
     // NOTE : actuellement le mode metadata renvoie TOUTE la row, graph inclus.
@@ -75,26 +75,26 @@ describe("GET /api/stories/[slug]", () => {
   });
 });
 
-describe("PUT /api/stories/[slug]", () => {
+describe("PUT /api/story/[slug]", () => {
   beforeAll(async () => {
     user = await createTestUser("slugput");
     otherUser = await createTestUser("slugother");
   });
 
   it("400 — body vide", async () => {
-    const { res } = await request("/api/stories/quelconque-x4f9k2", "PUT", {});
+    const { res } = await request("/api/story/quelconque-x4f9k2", "PUT", {});
     expect(res.status).toBe(400);
   });
 
   it("401 — sans session", async () => {
-    const { res } = await request("/api/stories/quelconque-x4f9k2", "PUT", {
+    const { res } = await request("/api/story/quelconque-x4f9k2", "PUT", {
       title: "Nouveau",
     });
     expect(res.status).toBe(401);
   });
 
   it("400 — slug malformé", async () => {
-    const { res } = await request("/api/stories/INVALIDE", "PUT", {
+    const { res } = await request("/api/story/INVALIDE", "PUT", {
       title: "Nouveau",
     }, user.cookie);
     expect(res.status).toBe(400);
@@ -103,7 +103,7 @@ describe("PUT /api/stories/[slug]", () => {
   it("200 — édition partielle (blurb seul)", async () => {
     const slug = await createStory(`Éditable ${user.username}`, user.cookie);
     const { res, json } = await request(
-      `/api/stories/${slug}`,
+      `/api/story/${slug}`,
       "PUT",
       { blurb: "Une quatrième de couverture" },
       user.cookie
@@ -116,7 +116,7 @@ describe("PUT /api/stories/[slug]", () => {
     await createStory(`Titre A ${user.username}`, user.cookie);
     const slugB = await createStory(`Titre B ${user.username}`, user.cookie);
     const { res } = await request(
-      `/api/stories/${slugB}`,
+      `/api/story/${slugB}`,
       "PUT",
       { title: `Titre A ${user.username}` },
       user.cookie
@@ -130,7 +130,7 @@ describe("PUT /api/stories/[slug]", () => {
       otherUser.cookie
     );
     const { res } = await request(
-      `/api/stories/${slugOther}`,
+      `/api/story/${slugOther}`,
       "PUT",
       { title: "Pirate" },
       user.cookie
@@ -139,9 +139,9 @@ describe("PUT /api/stories/[slug]", () => {
   });
 });
 
-describe("DELETE /api/stories/[slug]", () => {
+describe("DELETE /api/story/[slug]", () => {
   it("401 — sans session", async () => {
-    const { res } = await request("/api/stories/quelconque-x4f9k2", "DELETE");
+    const { res } = await request("/api/story/quelconque-x4f9k2", "DELETE");
     expect(res.status).toBe(401);
   });
 
@@ -150,14 +150,14 @@ describe("DELETE /api/stories/[slug]", () => {
     const slug = await createStory(`À supprimer ${u.username}`, u.cookie);
 
     const { res } = await request(
-      `/api/stories/${slug}`,
+      `/api/story/${slug}`,
       "DELETE",
       undefined,
       u.cookie
     );
     expect(res.status).toBe(204);
 
-    const { res: after } = await request(`/api/stories/${slug}`, "GET");
+    const { res: after } = await request(`/api/story/${slug}`, "GET");
     expect(after.status).toBe(404);
   });
 
@@ -167,7 +167,7 @@ describe("DELETE /api/stories/[slug]", () => {
     const slug = await createStory(`Pas à moi ${owner.username}`, owner.cookie);
 
     const { res } = await request(
-      `/api/stories/${slug}`,
+      `/api/story/${slug}`,
       "DELETE",
       undefined,
       intrus.cookie
