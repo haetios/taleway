@@ -1,0 +1,562 @@
+openapi: 3.1.0
+info:
+  title: Taleway API
+  version: 1.0.0
+  description: |
+    API de la plateforme de romans interactifs.
+    Erreurs en problem+json : `{ title, status, detail }`.
+    Auth : OTP par email, session en cookie httpOnly (posée par /auth/verify).
+
+servers:
+  - url: http://localhost:3000
+    description: Développement local
+
+# ---------------------------------------------------------------------------
+# Chemins
+# ---------------------------------------------------------------------------
+paths:
+  /api/auth:
+    post:
+      summary: Envoyer un code OTP (inscription/connexion combinées)
+      description: |
+        Envoie un code à 6 chiffres par email. Si l'email est inconnu, le compte
+        est créé à la vérification. Le rate limit GoTrue renvoie 429.
+      tags: [Auth]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/EmailRequest'
+      responses:
+        '201':
+          description: Code envoyé
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '429':
+          $ref: '#/components/responses/AuthError'
+        '500':
+          $ref: '#/components/responses/InternalServerError'
+
+  /api/auth/verify:
+    post:
+      summary: Vérifier le code OTP
+      description: |
+        Valide le code reçu par email et pose la session (cookie `sb-...`).
+        Statuts GoTrue relayés : 403 code invalide/expiré, 429 rate limit.
+      tags: [Auth]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/VerifyOtpRequest'
+      responses:
+        '200':
+          description: Session posée (cookie httpOnly dans les headers)
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '403':
+          $ref: '#/components/responses/AuthError'
+        '429':
+          $ref: '#/components/responses/AuthError'
+        '500':
+          $ref: '#/components/responses/InternalServerError'
+
+  /api/auth/profile:
+    post:
+      summary: Créer sa fiche profil (choisir son pseudo)
+      description: |
+        Première connexion uniquement : crée la fiche liée au compte auth.
+        L'id du profil = id de l'utilisateur authentifié.
+      tags: [Auth]
+      security:
+        - cookieAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/UsernameRequest'
+      responses:
+        '201':
+          description: Profil créé
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '409':
+          $ref: '#/components/responses/Conflict'
+
+  /api/story:
+    post:
+      summary: Créer une histoire
+      description: |
+        Le slug est généré serveur (slugify du titre + suffixe aléatoire) et
+        renvoyé dans la réponse. Conflit si l'auteur a déjà ce titre (hors
+        archivées).
+      tags: [Story]
+      security:
+        - cookieAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/CreateStoryRequest'
+      responses:
+        '201':
+          description: Histoire créée
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  data:
+                    type: object
+                    properties:
+                      slug:
+                        $ref: '#/components/schemas/Slug'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '409':
+          $ref: '#/components/responses/Conflict'
+
+    get:
+      summary: Lister les histoires publiées
+      description: |
+        Filtres combinables via query params. Les brouillons et archivées ne
+        sont jamais listés. Le graphe n'est jamais exposé ici.
+      tags: [Story]
+      parameters:
+        - name: title
+          in: query
+          description: Filtre LIKE sur le titre (sous-chaîne)
+          schema:
+            type: string
+        - name: categories
+          in: query
+          description: Liste CSV de catégories (`?categories=romance,horror`)
+          schema:
+            type: string
+        - name: authors
+          in: query
+          description: Liste CSV d'ids de profils
+          schema:
+            type: string
+      responses:
+        '200':
+          description: Liste (vide possible)
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  data:
+                    type: array
+                    items:
+                      $ref: '#/components/schemas/StoryMetadata'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+
+  /api/story/{slug}:
+    parameters:
+      - $ref: '#/components/parameters/SlugParam'
+
+    get:
+      summary: Récupérer une histoire
+      description: |
+        Sans `withGraph` : métadonnées des histoires publiées (public, sans
+        session). Avec `withGraph=true` : inclut le graphe ; visible si
+        l'histoire est publiée OU brouillon appartenant à l'utilisateur.
+      tags: [Story]
+      parameters:
+        - name: withGraph
+          in: query
+          required: false
+          description: '`true` pour inclure le graphe (session requise)'
+          schema:
+            type: string
+            enum: ['true']
+      responses:
+        '200':
+          description: Histoire (avec ou sans graphe selon withGraph)
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  data:
+                    $ref: '#/components/schemas/StoryMetadata'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '404':
+          $ref: '#/components/responses/NotFound'
+
+    put:
+      summary: Modifier son histoire
+      description: |
+        Édition partielle : seuls les champs fournis sont mis à jour.
+        Le slug n'est pas éditable (identifiant de la ressource).
+      tags: [Story]
+      security:
+        - cookieAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/EditStoryRequest'
+      responses:
+        '200':
+          description: Histoire mise à jour (row complète retournée)
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  data:
+                    $ref: '#/components/schemas/Story'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        '409':
+          $ref: '#/components/responses/Conflict'
+
+    delete:
+      summary: Archiver son histoire (soft delete)
+      description: |
+        Passe le statut à `archived` (suppression réversible). Idempotent
+        côté erreur : une story déjà archivée renvoie 404.
+      tags: [Story]
+      security:
+        - cookieAuth: []
+      responses:
+        '204':
+          description: Histoire archivée
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '404':
+          $ref: '#/components/responses/NotFound'
+
+  /api/profile/{id}:
+    parameters:
+      - $ref: '#/components/parameters/ProfileIdParam'
+    get:
+      summary: Consulter un profil public
+      tags: [Profile]
+      responses:
+        '200':
+          description: Profil
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  data:
+                    $ref: '#/components/schemas/Profile'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '404':
+          $ref: '#/components/responses/NotFound'
+
+  /api/profile/stories:
+    get:
+      summary: Lister ses histoires (brouillons inclus, archivées exclues)
+      tags: [Profile]
+      security:
+        - cookieAuth: []
+      responses:
+        '200':
+          description: Ses histoires (sans graphe)
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  data:
+                    type: array
+                    items:
+                      $ref: '#/components/schemas/StoryMetadata'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+
+  /api/bookmark/{slug}:
+    parameters:
+      - $ref: '#/components/parameters/SlugParam'
+
+    get:
+      summary: Reprendre sa lecture
+      description: Position (node_id) et variables sauvegardées pour une histoire.
+      tags: [Bookmark]
+      security:
+        - cookieAuth: []
+      responses:
+        '200':
+          description: Bookmark
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  data:
+                    $ref: '#/components/schemas/Bookmark'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '404':
+          $ref: '#/components/responses/NotFound'
+
+    delete:
+      summary: Supprimer son bookmark
+      description: Re-suppression d'un bookmark absent → 404.
+      tags: [Bookmark]
+      security:
+        - cookieAuth: []
+      responses:
+        '204':
+          description: Bookmark supprimé
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '404':
+          $ref: '#/components/responses/NotFound'
+
+# ---------------------------------------------------------------------------
+# Composants
+# ---------------------------------------------------------------------------
+components:
+  securitySchemes:
+    cookieAuth:
+      type: apiKey
+      in: cookie
+      name: sb-127-auth-token
+      description: Session Supabase posée par /api/auth/verify
+
+  parameters:
+    SlugParam:
+      name: slug
+      in: path
+      required: true
+      description: Identifiant public de l'histoire (généré à la création)
+      schema:
+        $ref: '#/components/schemas/Slug'
+    ProfileIdParam:
+      name: id
+      in: path
+      required: true
+      schema:
+        type: string
+        format: uuid
+
+  responses:
+    BadRequest:
+      description: Payload invalide (400)
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/Error'
+    Unauthorized:
+      description: Session absente ou expirée (401)
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/Error'
+    AuthError:
+      description: Erreur GoTrue relayée (403 code invalide, 429 rate limit...)
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/Error'
+    NotFound:
+      description: Ressource inexistante ou non visible (404 fusionnel)
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/Error'
+    Conflict:
+      description: Conflit (titre ou username déjà pris) (409)
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/Error'
+    InternalServerError:
+      description: Erreur serveur, message générique (500)
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/Error'
+
+  schemas:
+    Error:
+      type: object
+      properties:
+        title:
+          type: string
+        status:
+          type: integer
+        detail:
+          type: string
+
+    EmailRequest:
+      type: object
+      required: [email]
+      properties:
+        email:
+          type: string
+          format: email
+          maxLength: 255
+
+    VerifyOtpRequest:
+      type: object
+      required: [email, token]
+      properties:
+        email:
+          type: string
+          format: email
+        token:
+          type: string
+          pattern: '^\d{6}$'
+
+    UsernameRequest:
+      type: object
+      required: [username]
+      properties:
+        username:
+          type: string
+          minLength: 3
+          maxLength: 255
+          pattern: '^[0-9a-zA-Z_]+$'
+
+    CreateStoryRequest:
+      type: object
+      required: [title]
+      properties:
+        title:
+          type: string
+          minLength: 1
+          maxLength: 248
+
+    EditStoryRequest:
+      type: object
+      description: Au moins un champ (sinon 400). Slug non éditable.
+      minProperties: 1
+      properties:
+        title:
+          type: string
+          minLength: 1
+          maxLength: 248
+        blurb:
+          type: string
+          minLength: 1
+        category:
+          $ref: '#/components/schemas/Category'
+        graph:
+          type: object
+          description: Format xyflow — volontairement non contraint (studio à venir)
+        status:
+          $ref: '#/components/schemas/StoryStatus'
+        coverUrl:
+          type: string
+
+    StoryStatus:
+      type: string
+      enum: [draft, published, archived]
+
+    Category:
+      type: string
+      enum: [romance, horror, adventure, sci_fi, historical, detective, fantasy]
+
+    Slug:
+      type: string
+      maxLength: 255
+      pattern: '^[a-z0-9]+(-[a-z0-9]+)*-[2-9a-hjkmnp-z]{6}$'
+
+    Profile:
+      type: object
+      properties:
+        id:
+          type: string
+          format: uuid
+        username:
+          type: string
+        bio:
+          type: string
+        role:
+          type: string
+          enum: [user, mod, admin]
+        createdAt:
+          type: string
+          format: date-time
+        updatedAt:
+          type: string
+          format: date-time
+
+    StoryMetadata:
+      type: object
+      description: Story sans le graphe (listes, mode metadata)
+      properties:
+        id:
+          type: integer
+        profileId:
+          type: string
+          format: uuid
+        title:
+          type: string
+        slug:
+          $ref: '#/components/schemas/Slug'
+        blurb:
+          type: string
+        category:
+          $ref: '#/components/schemas/Category'
+        status:
+          $ref: '#/components/schemas/StoryStatus'
+        coverUrl:
+          type: string
+        createdAt:
+          type: string
+          format: date-time
+        updatedAt:
+          type: string
+          format: date-time
+
+    Story:
+      allOf:
+        - $ref: '#/components/schemas/StoryMetadata'
+        - type: object
+          properties:
+            graph:
+              type: object
+              description: Graphe xyflow (nodes/edges)
+
+    Bookmark:
+      type: object
+      properties:
+        id:
+          type: integer
+        profileId:
+          type: string
+          format: uuid
+        storyId:
+          type: integer
+        nodeId:
+          type: string
+        variables:
+          type: object
+        createdAt:
+          type: string
+          format: date-time
+        updatedAt:
+          type: string
+          format: date-time

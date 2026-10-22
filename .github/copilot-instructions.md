@@ -9,6 +9,7 @@ Plateforme de **romans interactifs** (histoires à choix multiples, graphe de n�
 ## Règles de travail
 
 - **Après TOUT changement d'API/route** : `pnpm test` (les tests tapent le dev server sur :3000 + Supabase local). Prérequis : `next dev` lancé, `pnpm db:start` fait.
+- **Synchro docs/tests = responsabilité de l'agent** : après tout changement de route/handler/schéma, l'agent DOIT vérifier et mettre à jour `docs/API.yml` (contrat OpenAPI : paths, statuts, schemas) et `DB.dbml` (si le schéma BDD bouge). Idem pour les tests : un nouveau comportement = un test qui le couvre ; un comportement changé = le test ajusté. Ne jamais laisser code, docs et tests diverger — c'est l'agent qui vérifie cette synchronisation à chaque changement, pas le développeur.
 - **Après tout changement de `src/db/schema.ts`** : `pnpm db:gen` (historique versionné dans `drizzle/`) — le schéma est appliqué par `drizzle-kit push` (`pnpm db:push` ou `pnpm db:reset`), PAS par des SQL copiés dans supabase (dossier migrations supprimé, workflow à une seule source de vérité).
 - Tests **idempotents** : identifiants uniques par run (`Date.now()`), car la base est réelle et partagée entre les runs. Jamais d'email/username fixes dans les tests d'écriture.
 - REST : méthodes HTTP = verbes. Un fichier `route.tsx` par ressource, exports GET/POST/PUT/DELETE dedans. Pas d'URL `/create|/delete|/edit`. Logique métier extraite dans `services/` si le handler grossit.
