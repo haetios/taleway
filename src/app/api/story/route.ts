@@ -2,6 +2,7 @@ import { db } from "@/db";
 import { stories, StoryStatus } from "@/db/schema";
 import { parseJsonBody } from "@/lib/parse-json-body";
 import { storyCreationLimiter } from "@/lib/rate-limit";
+import { s200, s201, s400, s409 } from "@/lib/responses";
 import { buildSlug } from "@/lib/slug";
 import { getUserFromSupabase } from "@/lib/supabase";
 import { storyWithoutGraph } from "@/types/story-without-graph";
@@ -19,13 +20,7 @@ export async function POST(request: NextRequest) {
     const result = titleRule.safeParse((body as { title?: string }).title)
 
     if (!result.success) {
-        return NextResponse.json({
-            title: 'Bad request',
-            status: 400,
-            detail: 'Invalid title'
-        }, {
-            status: 400
-        })
+        return s400('Invalid title')
     }
 
     const validTitle = result.data
@@ -37,14 +32,15 @@ export async function POST(request: NextRequest) {
     // Rate limit
     try {
         await storyCreationLimiter.consume(user.id)
-    } catch {
+    } catch (rejRes) {
+        const seconds = Math.ceil((rejRes as { msBeforeNext: number }).msBeforeNext / 1000)
         return NextResponse.json({
             title: 'Too Many Requests',
             status: 429,
             detail: 'Rate limit exceeded, try again later'
         }, {
             status: 429,
-            headers: { 'Retry-After': '3600' }
+            headers: { 'Retry-After': String(seconds) }
         })
     }
 
@@ -60,13 +56,7 @@ export async function POST(request: NextRequest) {
         .limit(1)
 
     if (existingTitle) {
-        return NextResponse.json({
-            title: 'Conflict',
-            status: 409,
-            detail: 'One of your books has already this title'
-        }, {
-            status: 409
-        })
+        return s409('One of your books has already this title')
     }
 
     // Ajout du roman
@@ -77,7 +67,7 @@ export async function POST(request: NextRequest) {
         graph: {}
     }).returning({ slug: stories.slug })
 
-    return NextResponse.json({ data: createdStory }, { status: 201 })
+    return s201(createdStory)
 }
 
 export async function GET(request: NextRequest) {
@@ -87,13 +77,7 @@ export async function GET(request: NextRequest) {
     const result = queryParamSchema.safeParse(Object.fromEntries(queryParams))
 
     if (!result.success) {
-        return NextResponse.json({
-            title: 'Bad request',
-            status: 400,
-            detail: result.error.issues[0].message
-        }, {
-            status: 400
-        })
+        return s400(result.error.issues[0].message)
     }
 
     const validQueryParams = result.data
@@ -124,9 +108,5 @@ export async function GET(request: NextRequest) {
             )
         )
 
-    return NextResponse.json({
-        data: storyList
-    }, {
-        status: 200
-    })
+    return s200(storyList)
 }

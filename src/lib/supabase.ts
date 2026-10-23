@@ -2,6 +2,7 @@ import { createServerClient } from "@supabase/ssr"
 import { isAuthApiError } from "@supabase/supabase-js"
 import { cookies } from "next/headers"
 import { NextResponse } from "next/server"
+import { s401, s500 } from "./responses"
 
 export async function getSupabaseServerClient() {
   const cookieStore = await cookies()
@@ -32,7 +33,7 @@ export async function getUserFromSupabase() {
   const supabase = await getSupabaseServerClient()
   const { data: { user }, error } = await supabase.auth.getUser()
 
-  if (!user) return unauthorized()
+  if (!user) return s401('You have to be authenticated')
   if (error) {
       if (isAuthApiError(error) && error.status && error.status < 500) {
           return authError(error.status, error.message)
@@ -40,20 +41,10 @@ export async function getUserFromSupabase() {
 
       console.error("[story/[slug]]", error)
 
-      return internalServerError()
+      return s500()
   }
 
   return user
-}
-
-export function unauthorized(message?: string) {
-  return NextResponse.json({
-      title: 'Unauthorized',
-      status: 401,
-      detail: message ? message : 'You have to be authenticated'
-  }, {
-      status: 401
-  })
 }
 
 export function authError(status: number, message?: string) {
@@ -63,15 +54,5 @@ export function authError(status: number, message?: string) {
       detail: message
   }, {
       status: status
-  })
-}
-
-export function internalServerError(message?: string) {
-  return NextResponse.json({
-      title: 'Internal Server Error',
-      status: 500,
-      detail: message ? message : 'Internal Server Error'
-  }, {
-      status: 500
   })
 }

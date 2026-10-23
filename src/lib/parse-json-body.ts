@@ -1,4 +1,5 @@
 import { NextRequest, NextResponse } from "next/server";
+import { s400 } from "./responses";
 
 export async function parseJsonBody(request: NextRequest): Promise<unknown | NextResponse> {
   let raw;
@@ -6,14 +7,7 @@ export async function parseJsonBody(request: NextRequest): Promise<unknown | Nex
   try {
     raw = await request.json();
   } catch {
-    return NextResponse.json(
-      {
-        title: "Bad request",
-        status: 400,
-        detail: "Invalid request",
-      },
-      { status: 400 }
-    );
+    return s400()
   }
 
   return raw

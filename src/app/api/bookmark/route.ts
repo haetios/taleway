@@ -2,6 +2,7 @@ import { db } from "@/db";
 import { bookmarks, stories, StoryStatus } from "@/db/schema";
 import { parseJsonBody } from "@/lib/parse-json-body";
 import { bookmarkLimiter } from "@/lib/rate-limit";
+import { s200, s400, s404 } from "@/lib/responses";
 import { getUserFromSupabase } from "@/lib/supabase";
 import { bookmarkSchema } from "@/validations/schemas/bookmark";
 import { and, eq } from "drizzle-orm";
@@ -15,13 +16,7 @@ export async function POST(request: NextRequest) {
     const result = bookmarkSchema.safeParse(body)
 
     if (!result.success) {
-        return NextResponse.json({
-            title: 'Bad request',
-            status: 400,
-            detail: result.error.issues[0].message
-        }, {
-            status: 400
-        })
+        return s400(result.error.issues[0].message)
     }
 
     const { slug, nodeId, variables } = result.data
@@ -33,14 +28,15 @@ export async function POST(request: NextRequest) {
     // Rate limit
     try {
         await bookmarkLimiter.consume(user.id)
-    } catch {
+    } catch (rejRes) {
+        const seconds = Math.ceil((rejRes as { msBeforeNext: number }).msBeforeNext / 1000)
         return NextResponse.json({
             title: 'Too Many Requests',
             status: 429,
             detail: 'Rate limit exceeded, try again later'
         }, {
             status: 429,
-            headers: { 'Retry-After': '60' }
+            headers: { 'Retry-After': String(seconds) }
         })
     }
 
@@ -56,13 +52,7 @@ export async function POST(request: NextRequest) {
         )
 
     if (!existingStory) {
-        return NextResponse.json({
-            title: 'Not found',
-            status: 404,
-            detail: 'Story not found'
-        }, {
-            status: 404
-        })
+        return s404('Story not found')
     }
 
     // Création ou mise à jour du marque-page
@@ -73,11 +63,5 @@ export async function POST(request: NextRequest) {
         set: { nodeId, variables },
     })
 
-    return NextResponse.json({
-        title: 'OK',
-        status: 200,
-        detail: 'Bookmark updated'
-    }, {
-        status: 200
-    })
+    return s200()
 }

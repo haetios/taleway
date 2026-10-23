@@ -35,7 +35,9 @@
 - [ ] Ajouter messages d'erreurs personnalisés pour les validations Zod
 
 - [ ] Refactor !!!! (existing..., if (supabase.auth), return response, etc.)
-    - Beaucoup de code dupliqué
+    - Supabase user
+    - Rate limit
+    - Recherche existant
 - [ ] Commentaires !!!!
 
 - [ ] API : POST    /auth/logout

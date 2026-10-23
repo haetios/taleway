@@ -1,6 +1,7 @@
 import { db } from "@/db";
 import { profiles } from "@/db/schema";
 import { parseJsonBody } from "@/lib/parse-json-body";
+import { s201, s400, s409 } from "@/lib/responses";
 import { getUserFromSupabase } from "@/lib/supabase";
 import { usernameRule } from "@/validations/rules/username";
 import { eq } from "drizzle-orm";
@@ -14,13 +15,7 @@ export async function POST(request: NextRequest) {
     const result = usernameRule.safeParse((body as { username?: string }).username)
 
     if (!result.success) {
-        return NextResponse.json({
-            title: 'Bad request',
-            status: 400,
-            detail: 'Invalid username'
-        }, {
-            status: 400
-        })
+        return s400('Invalid username')
     }
 
     const validUsername = result.data
@@ -37,17 +32,11 @@ export async function POST(request: NextRequest) {
         .limit(1)
 
     if (existingUsername) {
-        return NextResponse.json({
-            title: 'Conflict',
-            status: 409,
-            detail: 'Username already used'
-        }, {
-            status: 409
-        })
+        return s409('Username already used')
     }
 
     // Ajout du profil
-    await db.insert(profiles).values({ id: user.id, username: validUsername })
+    const [profile] = await db.insert(profiles).values({ id: user.id, username: validUsername }).returning()
 
-    return NextResponse.json(null, { status: 201 })
+    return s201(profile.id)
 }

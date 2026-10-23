@@ -1,8 +1,9 @@
 import { isAuthApiError } from "@supabase/supabase-js";
 import { NextRequest, NextResponse } from "next/server";
-import { authError, getSupabaseServerClient, internalServerError } from "@/lib/supabase";
+import { authError, getSupabaseServerClient } from "@/lib/supabase";
 import { parseJsonBody } from "@/lib/parse-json-body";
 import { emailRule } from "@/validations/rules/email";
+import { s201, s400, s500 } from "@/lib/responses";
 
 export async function POST(request: NextRequest) {
   const body = await parseJsonBody(request)
@@ -12,14 +13,7 @@ export async function POST(request: NextRequest) {
   const result = emailRule.safeParse((body as { email?: string }).email)
 
   if (!result.success) {
-    return NextResponse.json(
-      {
-        title: "Bad request",
-        status: 400,
-        detail: result.error.issues[0].message
-      },
-      { status: 400 }
-    )
+    return s400(result.error.issues[0].message)
   }
 
   const validEmail = result.data
@@ -41,8 +35,8 @@ export async function POST(request: NextRequest) {
 
     console.error("[auth]", error)
 
-    return internalServerError()
+    return s500()
   }
 
-  return NextResponse.json(null, { status: 201 })
+  return s201()
 }

@@ -1,5 +1,6 @@
 import { db } from "@/db";
 import { profiles, stories, StoryStatus } from "@/db/schema";
+import { s200, s404 } from "@/lib/responses";
 import { getUserFromSupabase } from "@/lib/supabase";
 import { storyWithoutGraph } from "@/types/story-without-graph";
 import { and, eq, ne } from "drizzle-orm";
@@ -15,11 +16,7 @@ export async function GET(_: NextRequest) {
     const [profile] = await db.select({ id: profiles.id }).from(profiles).where(eq(profiles.id, user.id)).limit(1)
 
     if (!profile) {
-        return NextResponse.json({
-            title: 'Not found',
-            status: 404,
-            detail: 'Oops, this page does not exist'
-        })
+        return s404()
     }
 
     // Récupération de tous les livres (hors archive)
@@ -33,9 +30,5 @@ export async function GET(_: NextRequest) {
             )
         )
 
-    return NextResponse.json({
-        data: storyList
-    }, {
-        status: 200
-    })
+    return s200(storyList)
 }

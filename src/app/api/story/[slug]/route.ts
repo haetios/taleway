@@ -2,7 +2,8 @@ import { db } from "@/db";
 import { stories, Story, StoryStatus } from "@/db/schema";
 import { parseJsonBody } from "@/lib/parse-json-body";
 import { storyEditionLimiter, deletionLimiter } from "@/lib/rate-limit";
-import { authError, getSupabaseServerClient, getUserFromSupabase, internalServerError, unauthorized } from "@/lib/supabase";
+import { s200, s204, s400, s401, s404, s409, s500 } from "@/lib/responses";
+import { authError, getSupabaseServerClient, getUserFromSupabase } from "@/lib/supabase";
 import { slugRule } from "@/validations/rules/slug";
 import { editStorySchema } from "@/validations/schemas/edit-story";
 import { isAuthApiError } from "@supabase/supabase-js";
@@ -20,13 +21,7 @@ export async function GET(
     const slugResult = slugRule.safeParse(slug)
 
     if (!slugResult.success) {
-        return NextResponse.json({
-            title: 'Bad request',
-            status: 400,
-            detail: 'Invalid slug'
-        }, {
-            status: 400
-        })
+        return s400('Invalid slug')
     }
 
     const validWithGraph = withGraph === 'true'
@@ -40,7 +35,7 @@ export async function GET(
     let story: Story | Omit<Story, 'graph'>
 
     if (validWithGraph) { // Lecture & édition
-        if (!user) return unauthorized()
+        if (!user) return s401('You have to be authenticated')
         if (error) {
             if (isAuthApiError(error) && error.status && error.status < 500) {
                 return authError(error.status, error.message)
@@ -48,7 +43,7 @@ export async function GET(
 
             console.error("[story/[slug]]", error)
 
-            return internalServerError()
+            return s500()
         }
 
         //// Si draft et à l'utilisateur
@@ -93,20 +88,10 @@ export async function GET(
     }
 
     if (!story) {
-        return NextResponse.json({
-            title: 'Not found',
-            status: 404,
-            detail: 'Story not found'
-        }, {
-            status: 404
-        })
+        return s404('Story not found')
     }
 
-    return NextResponse.json({
-        data: story
-    }, {
-        status: 200
-    })
+    return s200(story)
 }
 
 export async function PUT(
@@ -122,13 +107,7 @@ export async function PUT(
     const resultEdit = editStorySchema.safeParse(body)
 
     if (!resultEdit.success) {
-        return NextResponse.json({
-            title: 'Bad request',
-            status: 400,
-            detail: resultEdit.error.issues[0].message
-        }, {
-            status: 400
-        })
+        return s400(resultEdit.error.issues[0].message)
     }
 
     const validBody = resultEdit.data
@@ -136,13 +115,7 @@ export async function PUT(
     const resultSlug = slugRule.safeParse(slug)
 
     if (!resultSlug.success) {
-        return NextResponse.json({
-            title: 'Bad request',
-            status: 400,
-            detail: 'Invalid slug'
-        }, {
-            status: 400
-        })
+        return s400('Invalid slug')
     }
 
     const validSlug = resultSlug.data
@@ -181,13 +154,7 @@ export async function PUT(
         ).limit(1)
 
         if (existingTitle) {
-            return NextResponse.json({
-                title: 'Conflict',
-                status: 409,
-                detail: 'One of your book has already this title'
-            }, {
-                status: 409
-            })
+            return s409('One of your book has already this title')
         }
     }
 
@@ -204,16 +171,10 @@ export async function PUT(
         .returning()
 
     if (!editedStory) {
-        return NextResponse.json({
-            title: 'Not found',
-            status: 404,
-            detail: 'Story not found'
-        }, {
-            status: 404
-        })
+        return s404('Story not found')
     }
 
-    return NextResponse.json({ data: editedStory }, { status: 200 })
+    return s200(editedStory)
 }
 
 // request inutilisé mais REQUIS en 1er argument : Next le passe toujours
@@ -225,13 +186,7 @@ export async function DELETE(_: NextRequest, { params }: { params: Promise<{ slu
     const result = slugRule.safeParse(slug)
 
     if (!result.success) {
-        return NextResponse.json({
-            title: 'Bad request',
-            status: 400,
-            detail: 'Invalid slug'
-        }, {
-            status: 400
-        })
+        return s400('Invalid slug')
     }
 
     const validSlug = result.data
@@ -268,14 +223,8 @@ export async function DELETE(_: NextRequest, { params }: { params: Promise<{ slu
         .returning()
 
     if (!deletedStory) {
-        return NextResponse.json({
-            title: 'Not found',
-            status: 404,
-            detail: 'Story not found'
-        }, {
-            status: 404
-        })
+        return s404('Story not found')
     }
 
-    return new NextResponse(null, { status: 204 })
+    return s204()
 }

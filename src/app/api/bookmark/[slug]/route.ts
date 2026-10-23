@@ -1,43 +1,29 @@
 import { db } from "@/db";
 import { bookmarks, stories, StoryStatus } from "@/db/schema";
 import { deletionLimiter } from "@/lib/rate-limit";
-import { getSupabaseServerClient, authError, internalServerError, unauthorized, getUserFromSupabase } from "@/lib/supabase";
+import { s200, s204, s400, s404 } from "@/lib/responses";
+import { getUserFromSupabase } from "@/lib/supabase";
 import { slugRule } from "@/validations/rules";
-import { isAuthApiError } from "@supabase/supabase-js";
 import { and, eq } from "drizzle-orm";
 import { NextRequest, NextResponse } from "next/server";
 
 export async function GET(_request: NextRequest, { params }: { params: Promise<{ slug: string }> }) {
     const { slug } = await params
 
+    // Vérification format
     const result = slugRule.safeParse(slug)
 
     if (!result.success) {
-        return NextResponse.json({
-            title: 'Bad request',
-            status: 400,
-            detail: 'Invalid slug'
-        }, {
-            status: 400
-        })
+        return s400('Invalid slug')
     }
 
     const validSlug = result.data
 
-    const supabase = await getSupabaseServerClient()
-    const { data: { user }, error } = await supabase.auth.getUser()
+    // Vérification authentification
+    const user = await getUserFromSupabase()
+    if (user instanceof NextResponse) return user
 
-    if (!user) return unauthorized()
-    if (error) {
-        if (isAuthApiError(error) && error.status && error.status < 500) {
-            return authError(error.status, error.message)
-        }
-
-        console.error("[bookmark/[slug]]", error)
-
-        return internalServerError()
-    }
-
+    // Vérification existence du roman
     const [existingStory] = await db
         .select({ id: stories.id })
         .from(stories)
@@ -49,15 +35,10 @@ export async function GET(_request: NextRequest, { params }: { params: Promise<{
         )
 
     if (!existingStory) {
-        return NextResponse.json({
-            title: 'Not found',
-            status: 404,
-            detail: 'Story not found'
-        }, {
-            status: 404
-        })
+        return s404('Story not found')
     }
 
+    // Vérification existence du marque-page
     const [existingBookmark] = await db
         .select()
         .from(bookmarks)
@@ -69,20 +50,10 @@ export async function GET(_request: NextRequest, { params }: { params: Promise<{
         )
 
     if (!existingBookmark) {
-        return NextResponse.json({
-            title: 'Not found',
-            status: 404,
-            detail: 'Bookmark not found'
-        }, {
-            status: 404
-        })
+        return s404('Bookmark not found')
     }
 
-    return NextResponse.json({
-        data: existingBookmark
-    }, {
-        status: 200
-    })
+    return s200(existingBookmark)
 }
 
 export async function DELETE(_request: NextRequest, { params }: { params: Promise<{ slug: string }> }) {
@@ -92,13 +63,7 @@ export async function DELETE(_request: NextRequest, { params }: { params: Promis
     const result = slugRule.safeParse(slug)
 
     if (!result.success) {
-        return NextResponse.json({
-            title: 'Bad request',
-            status: 400,
-            detail: 'Invalid slug'
-        }, {
-            status: 400
-        })
+        return s400('Invalid slug')
     }
 
     const validSlug = result.data
@@ -107,7 +72,7 @@ export async function DELETE(_request: NextRequest, { params }: { params: Promis
     const user = await getUserFromSupabase()
     if (user instanceof NextResponse) return user
 
-    // Rate limit — DELETE (suppression)
+    // Rate limit
     try {
         await deletionLimiter.consume(user.id)
     } catch (rejRes) {
@@ -134,13 +99,7 @@ export async function DELETE(_request: NextRequest, { params }: { params: Promis
         )
 
     if (!existingStory) {
-        return NextResponse.json({
-            title: 'Not found',
-            status: 404,
-            detail: 'Story not found'
-        }, {
-            status: 404
-        })
+        return s404('Story not found')
     }
 
     // Suppression du marque-page
@@ -154,14 +113,8 @@ export async function DELETE(_request: NextRequest, { params }: { params: Promis
         ).returning()
 
     if (!deletedBookmark) {
-        return NextResponse.json({
-            title: 'Not found',
-            status: 404,
-            detail: 'Bookmark not found'
-        }, {
-            status: 404
-        })
+        return s404('Bookmark not found')
     }
 
-    return new NextResponse(null, { status: 204 })
+    return s204()
 }

@@ -6,6 +6,7 @@ import { settingsLimiter } from "@/lib/rate-limit";
 import { settingsSchema } from "@/validations/schemas/settings";
 import { eq } from "drizzle-orm";
 import { NextRequest, NextResponse } from "next/server";
+import { s200, s204, s400, s404, s409 } from "@/lib/responses";
 
 export async function GET(_: NextRequest) {
 
@@ -17,21 +18,13 @@ export async function GET(_: NextRequest) {
     const [existingProfile] = await db.select().from(profiles).where(eq(profiles.id, user.id))
 
     if (!existingProfile) {
-        return NextResponse.json({
-            title: 'Not found',
-            status: 404,
-            detail: 'Not found'
-        })
+        return s404()
     }
 
-    return NextResponse.json({
-        data: {
-            email: user.email,
-            username: existingProfile.username,
-            bio: existingProfile.bio,
-        }
-    }, {
-        status: 200
+    return s200({
+        email: user.email,
+        username: existingProfile.username,
+        bio: existingProfile.bio,
     })
 }
 
@@ -43,13 +36,7 @@ export async function PUT(request: NextRequest) {
     const result = settingsSchema.safeParse(body)
 
     if (!result.success) {
-        return NextResponse.json({
-            title: 'Bad request',
-            status: 400,
-            detail: result.error.issues[0].message
-        }, {
-            status: 400
-        })
+        return s400(result.error.issues[0].message)
     }
 
     const { email, username, bio } = result.data
@@ -77,13 +64,7 @@ export async function PUT(request: NextRequest) {
     const [existingProfile] = await db.select().from(profiles).where(eq(profiles.id, user.id))
 
     if (!existingProfile) {
-        return NextResponse.json({
-            title: 'Not found',
-            status: 404,
-            detail: 'Profile not found'
-        }, {
-            status: 404
-        })
+        return s404('Profile not found')
     }
 
     // Mise à jour de l'email
@@ -99,18 +80,12 @@ export async function PUT(request: NextRequest) {
             .where(eq(profiles.username, username))
 
         if (existingUsername) {
-            return NextResponse.json({
-                title: 'Conflict',
-                status: 409,
-                detail: 'Username already used'
-            }, {
-                status: 409
-            })
+            return s409('Username already used')
         }
     }
 
     // Mise à jour du profil
     await db.update(profiles).set({ username, bio }).where(eq(profiles.id, user.id))
 
-    return new NextResponse(null, { status: 204 })
+    return s204()
 }

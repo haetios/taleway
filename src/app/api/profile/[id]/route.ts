@@ -1,8 +1,9 @@
 import { db } from "@/db";
 import { profiles } from "@/db/schema";
+import { s200, s400, s404 } from "@/lib/responses";
 import { profileIdRule } from "@/validations/rules";
 import { eq } from "drizzle-orm";
-import { NextRequest, NextResponse } from "next/server";
+import { NextRequest } from "next/server";
 
 export async function GET(_: NextRequest, { params }: { params: Promise<{ id: string }> }) {
     const { id } = await params
@@ -11,13 +12,7 @@ export async function GET(_: NextRequest, { params }: { params: Promise<{ id: st
     const result = profileIdRule.safeParse(id)
 
     if (!result.success) {
-        return NextResponse.json({
-            title: 'Bad request',
-            status: 400,
-            detail: 'Invalid profile id'
-        }, {
-            status: 400
-        })
+        return s400('Invalid profile id')
     }
 
     const validId = result.data
@@ -26,18 +21,8 @@ export async function GET(_: NextRequest, { params }: { params: Promise<{ id: st
     const [profile] = await db.select().from(profiles).where(eq(profiles.id, validId)).limit(1)
 
     if (!profile) {
-        return NextResponse.json({
-            title: 'Not found',
-            status: 404,
-            detail: 'Profile not found'
-        }, {
-            status: 404
-        })
+        return s404('Profile not found')
     }
 
-    return NextResponse.json({
-        data: profile
-    }, {
-        status: 200
-    })
+    return s200(profile)
 }
