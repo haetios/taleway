@@ -2,3 +2,6 @@ allowBuilds:
   esbuild: false
   sharp: false
   unrs-resolver: false
+permissions:
+  drizzle-kit:
+    skills: false

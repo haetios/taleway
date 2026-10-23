@@ -1,6 +1,7 @@
 import { db } from "@/db";
 import { stories, StoryStatus } from "@/db/schema";
 import { parseJsonBody } from "@/lib/parse-json-body";
+import { storyCreateLimiter } from "@/lib/rate-limit";
 import { buildSlug } from "@/lib/slug";
 import { authError, getSupabaseServerClient, internalServerError, unauthorized } from "@/lib/supabase";
 import { storyWithoutGraph } from "@/types/story-without-graph";
@@ -28,6 +29,8 @@ export async function POST(request: NextRequest) {
         })
     }
 
+    const validTitle = result.data
+
     // Vérification authentification
     const supabase = await getSupabaseServerClient()
     const { data: { user }, error } = await supabase.auth.getUser()
@@ -43,9 +46,21 @@ export async function POST(request: NextRequest) {
         return internalServerError()
     }
 
-    // Vérification existence du titre
-    const validTitle = result.data
+    // Rate limit
+    try {
+        await storyCreateLimiter.consume(user.id)
+    } catch {
+        return NextResponse.json({
+            title: 'Too Many Requests',
+            status: 429,
+            detail: 'Rate limit exceeded, try again later'
+        }, {
+            status: 429,
+            headers: { 'Retry-After': '3600' }
+        })
+    }
 
+    // Vérification existence du titre
     const [existingTitle] = await db
         .select({ id: stories.id })
         .from(stories)
@@ -86,7 +101,7 @@ export async function GET(request: NextRequest) {
         return NextResponse.json({
             title: 'Bad request',
             status: 400,
-            detail: 'Incorrect query params'
+            detail: result.error.issues[0].message
         }, {
             status: 400
         })

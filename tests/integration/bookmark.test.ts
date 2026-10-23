@@ -27,6 +27,117 @@ async function createPublishedStory(cookie: string, title: string) {
 // closeSql inutile : vitest termine le process (la connexion SQL meurt avec).
 // (Un afterAll ici fermerait le singleton pendant que l'autre describe l'utilise.)
 
+describe("POST /api/bookmark (upsert)", () => {
+  let reader: TestUser;
+  let author: TestUser;
+
+  beforeAll(async () => {
+    reader = await createTestUser("bmpost");
+    author = await createTestUser("bmpostauthor");
+  });
+
+  it("400 — payload invalide (nodeId manquant)", async () => {
+    const { res } = await post("/api/bookmark", { slug: "quelconque-234567" }, reader.cookie);
+    expect(res.status).toBe(400);
+  });
+
+  it("401 — sans session", async () => {
+    const { res } = await post("/api/bookmark", { slug: "quelconque-234567", nodeId: "node-1", variables: {} });
+    expect(res.status).toBe(401);
+  });
+
+  it("404 — story inconnue (fusionnel)", async () => {
+    const { res } = await post(
+      "/api/bookmark",
+      { slug: "inexistant-234567", nodeId: "node-1", variables: {} },
+      reader.cookie
+    );
+    expect(res.status).toBe(404);
+  });
+
+  it("200 — création implicite puis mise à jour (upsert), lisible au GET", async () => {
+    const { slug } = await createPublishedStory(author.cookie, `Upsert ${author.username}`);
+
+    // 1er POST → le bookmark n'existe pas → upsert le crée
+    const { res: post1 } = await post(
+      "/api/bookmark",
+      { slug, nodeId: "node-a", variables: { confiance: 10 } },
+      reader.cookie
+    );
+    expect(post1.status).toBe(200);
+
+    // GET confirme la position sauvegardée
+    const { res: get1, json: getJson1 } = await request(`/api/bookmark/${slug}`, "GET", undefined, reader.cookie);
+    expect(get1.status).toBe(200);
+    expect(getJson1.data.nodeId).toBe("node-a");
+    expect(getJson1.data.variables).toEqual({ confiance: 10 });
+
+    // 2e POST → le bookmark existe → upsert le met à jour
+    const { res: post2 } = await post(
+      "/api/bookmark",
+      { slug, nodeId: "node-b", variables: { confiance: 20 } },
+      reader.cookie
+    );
+    expect(post2.status).toBe(200);
+
+    // GET confirme la nouvelle position
+    const { res: get2, json: getJson2 } = await request(`/api/bookmark/${slug}`, "GET", undefined, reader.cookie);
+    expect(get2.status).toBe(200);
+    expect(getJson2.data.nodeId).toBe("node-b");
+    expect(getJson2.data.variables).toEqual({ confiance: 20 });
+  });
+
+  it("404 — bookmark refusé sur un draft d'autrui (non published)", async () => {
+    // Draft jamais publié par son auteur
+    const { json } = await post("/api/story", { title: `Draft caché ${author.username}` }, author.cookie);
+    const draftSlug = json.data.slug as string;
+
+    const { res } = await post(
+      "/api/bookmark",
+      { slug: draftSlug, nodeId: "node-1", variables: {} },
+      reader.cookie
+    );
+    expect(res.status).toBe(404);
+  });
+
+  it("429 — rate limit dépassé (61e sauvegarde dans la minute, limite à 60)", async () => {
+    // User dédié + story dédiée (fixtures à part pour ne pas polluer les autres tests)
+    const rl = await createTestUser("bmratelimit");
+    const rlAuthor = await createTestUser("bmratelimitauth");
+    const { slug } = await createPublishedStory(rlAuthor.cookie, `RL bookmark ${rlAuthor.username}`);
+
+    for (let i = 0; i < 61; i++) {
+      const { res } = await post(
+        "/api/bookmark",
+        { slug, nodeId: `node-${i}`, variables: {} },
+        rl.cookie
+      );
+      if (i < 60) {
+        expect(res.status).toBe(200);
+      } else {
+        expect(res.status).toBe(429);
+        expect(res.headers.get("retry-after")).not.toBeNull();
+      }
+    }
+  });
+
+  it("isolation — le bookmark d'un lecteur n'apparaît pas chez un autre", async () => {
+    const { slug } = await createPublishedStory(author.cookie, `Iso bookmark ${author.username}`);
+    const otherReader = await createTestUser("bmiso");
+
+    await post("/api/bookmark", { slug, nodeId: "node-x" }, reader.cookie);
+
+    // reader a un bookmark, otherReader non
+    const { res: getOther } = await request(`/api/bookmark/${slug}`, "GET", undefined, otherReader.cookie);
+    expect(getOther.status).toBe(404);
+
+    // La mise à jour par reader ne touche pas otherReader (le sien reste absent)
+    await post("/api/bookmark", { slug, nodeId: "node-y" }, reader.cookie);
+    const { res: getOtherAfter } = await request(`/api/bookmark/${slug}`, "GET", undefined, otherReader.cookie);
+    expect(getOtherAfter.status).toBe(404);
+  });
+});
+
 describe("GET /api/bookmark/[slug]", () => {
   let user: TestUser;
   let author: TestUser;

@@ -35,6 +35,26 @@ describe("POST /api/story", () => {
     const { res } = await post("/api/story", { title }, user.cookie);
     expect(res.status).toBe(409);
   });
+
+  it("429 — rate limit dépassé (11e création dans l'heure, limite à 10)", async () => {
+    // User dédié, frais → compteur Redis à zéro pour lui
+    const rl = await createTestUser("ratelimit");
+
+    for (let i = 0; i < 11; i++) {
+      const { res } = await post(
+        "/api/story",
+        { title: `RL ${rl.username} ${i}` },
+        rl.cookie
+      );
+      if (i < 10) {
+        expect(res.status).toBe(201);
+      } else {
+        expect(res.status).toBe(429);
+        // Header standard pour que le client attende avant de retenter
+        expect(res.headers.get("retry-after")).not.toBeNull();
+      }
+    }
+  });
 });
 
 describe("GET /api/story", () => {

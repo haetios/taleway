@@ -22,7 +22,7 @@ export async function GET(
         return NextResponse.json({
             title: 'Bad request',
             status: 400,
-            detail: slugResult.error.issues[0].message
+            detail: 'Invalid slug'
         }, {
             status: 400
         })

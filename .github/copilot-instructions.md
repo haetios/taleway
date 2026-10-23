@@ -40,6 +40,7 @@ Plateforme de **romans interactifs** (histoires à choix multiples, graphe de n�
 11. **FK `stories.profile_id` → 500 nu** : un utilisateur auth sans fiche `profiles` (OTP vérifié mais `POST /auth/profile` jamais fait) fait planter tout insert lié. Flux complet requis : auth → verify → **profile** → stories. Considérer un trigger `on_auth_user_created`.
 12. **Route Handler : le contexte ne peut PAS être en 1er argument**. Next passe TOUJOURS le request en position 0 ; `DELETE({ params })` seul → `{ params }` déstructure le request → `params` undefined → 500 "Cannot destructure property". Le request inutilisé doit rester déclaré (`_request`) ou être omis avec le contexte aussi. Vérifié par tests (26/26).
 13. **`request.json()` non attrapé = 500 nu** sur body non-JSON → helper `parseJsonBody` (`src/lib/parse-json-body.ts`) dans tous les handlers à body.
+14. **Rate limit (Redis + `rate-limiter-flexible`)** : `src/lib/rate-limit.ts` (limiters par endpoint, `RATE_LIMIT_*` en env). 429 + header `Retry-After`. Local : Redis via `docker compose up -d redis` (`REDIS_URL`). Prod : Upstash (même client). **Compteurs persistés entre les runs de tests** — users uniques par run obligatoires pour les tests à limite basse ; `redis-cli flushall` pour repartir à zéro en cas de pollution.
 
 ## Entretien de ce fichier (rôle de l'agent)
 
