@@ -13,7 +13,7 @@ export async function GET(_: NextRequest) {
     if (user instanceof NextResponse) return user
 
     // Vérification profil
-    const [profile] = await db.select({ id: profiles.id }).from(profiles).where(eq(profiles.id, user.id)).limit(1)
+    const [profile] = await db.select({ id: profiles.id }).from(profiles).where(eq(profiles.id, user.id))
 
     if (!profile) {
         return s404()

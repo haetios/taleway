@@ -29,7 +29,6 @@ export async function POST(request: NextRequest) {
         .select({ id: profiles.id })
         .from(profiles)
         .where(eq(profiles.username, validUsername))
-        .limit(1)
 
     if (existingUsername) {
         return s409('Username already used')

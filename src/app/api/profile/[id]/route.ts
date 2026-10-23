@@ -18,7 +18,7 @@ export async function GET(_: NextRequest, { params }: { params: Promise<{ id: st
     const validId = result.data
 
     // Vérification existence du profil
-    const [profile] = await db.select().from(profiles).where(eq(profiles.id, validId)).limit(1)
+    const [profile] = await db.select().from(profiles).where(eq(profiles.id, validId))
 
     if (!profile) {
         return s404('Profile not found')

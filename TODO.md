@@ -34,13 +34,13 @@
 - [X] Rajouter un anti-spam au niveau de l'API (rate-limit)
 - [ ] Ajouter messages d'erreurs personnalisés pour les validations Zod
 
-- [ ] Refactor !!!! (existing..., if (supabase.auth), return response, etc.)
+- [ ] Refactor !!!!
     - Supabase user
     - Rate limit
     - Recherche existant
-- [ ] Commentaires !!!!
+- [X] Commentaires !!!!
 
-- [ ] API : POST    /auth/logout
+- [X] API : POST    /auth/logout
 - [ ] API : DELETE  /profile/ID
 ---
 
