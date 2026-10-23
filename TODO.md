@@ -32,15 +32,15 @@
 - [X] TESTS : Ajouter des tests pour API -> GET/PUT `/profile/settings`
 
 - [X] Rajouter un anti-spam au niveau de l'API (rate-limit)
-- [ ] Ajouter messages d'erreurs personnalisés pour les validations Zod
-
-- [ ] Refactor !!!!
-    - Supabase user
-    - Rate limit
-    - Recherche existant
-- [X] Commentaires !!!!
 
 - [X] API : POST    /auth/logout
+
+- [X] Refactor !!!!
+    - Supabase user
+    - Rate limit
+- [X] Commentaires !!!!
+
+- [ ] Ajouter messages d'erreurs personnalisés pour les validations Zod
 - [ ] API : DELETE  /profile/ID
 ---
 
