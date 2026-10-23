@@ -1,7 +1,7 @@
 import { db } from "@/db";
 import { profiles } from "@/db/schema";
 import { parseJsonBody } from "@/lib/parse-json-body";
-import { authError, getSupabaseServerClient, internalServerError, unauthorized } from "@/lib/supabase";
+import { authError, getSupabaseServerClient, getUserFromSupabase, internalServerError, unauthorized } from "@/lib/supabase";
 import { settingsLimiter } from "@/lib/rate-limit";
 import { settingsSchema } from "@/validations/schemas/settings";
 import { isAuthApiError } from "@supabase/supabase-js";
@@ -11,19 +11,8 @@ import { NextRequest, NextResponse } from "next/server";
 export async function GET(_: NextRequest) {
 
     // Vérification authentification
-    const supabase = await getSupabaseServerClient()
-    const { data: { user }, error } = await supabase.auth.getUser()
-
-    if (!user) return unauthorized()
-    if (error) {
-        if (isAuthApiError(error) && error.status && error.status < 500) {
-            return authError(error.status, error.message)
-        }
-
-        console.error("[profile/settings]", error)
-
-        return internalServerError()
-    }
+    const user = await getUserFromSupabase()
+    if (user instanceof NextResponse) return user
 
     // Vérification profil
     const [existingProfile] = await db.select().from(profiles).where(eq(profiles.id, user.id))
@@ -67,21 +56,10 @@ export async function PUT(request: NextRequest) {
     const { email, username, bio } = result.data
 
     // Vérification authentification
-    const supabase = await getSupabaseServerClient()
-    const { data: { user }, error } = await supabase.auth.getUser()
+    const user = await getUserFromSupabase()
+    if (user instanceof NextResponse) return user
 
-    if (!user) return unauthorized()
-    if (error) {
-        if (isAuthApiError(error) && error.status && error.status < 500) {
-            return authError(error.status, error.message)
-        }
-
-        console.error("[profile/settings]", error)
-
-        return internalServerError()
-    }
-
-    // Rate limit (PUT uniquement : le GET est une lecture)
+    // Rate limit
     try {
         await settingsLimiter.consume(user.id)
     } catch (rejRes) {
@@ -109,8 +87,10 @@ export async function PUT(request: NextRequest) {
         })
     }
 
+    // Mise à jour de l'email
+    const supabase = await getSupabaseServerClient()
     await supabase.auth.updateUser({ email })
-    // checker error
+    // ! checker error
 
     // Vérification existence du pseudo
     if (username) {
@@ -130,6 +110,7 @@ export async function PUT(request: NextRequest) {
         }
     }
 
+    // Mise à jour du profil
     await db.update(profiles).set({ username, bio }).where(eq(profiles.id, user.id))
 
     return new NextResponse(null, { status: 204 })

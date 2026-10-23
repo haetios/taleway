@@ -1,9 +1,9 @@
 import { db } from "@/db";
 import { stories, StoryStatus } from "@/db/schema";
 import { parseJsonBody } from "@/lib/parse-json-body";
-import { storyCreateLimiter } from "@/lib/rate-limit";
+import { storyCreationLimiter } from "@/lib/rate-limit";
 import { buildSlug } from "@/lib/slug";
-import { authError, getSupabaseServerClient, internalServerError, unauthorized } from "@/lib/supabase";
+import { authError, getSupabaseServerClient, getUserFromSupabase, internalServerError, unauthorized } from "@/lib/supabase";
 import { storyWithoutGraph } from "@/types/story-without-graph";
 import { titleRule } from "@/validations/rules/title";
 import { queryParamSchema } from "@/validations/schemas/query-params";
@@ -32,23 +32,12 @@ export async function POST(request: NextRequest) {
     const validTitle = result.data
 
     // Vérification authentification
-    const supabase = await getSupabaseServerClient()
-    const { data: { user }, error } = await supabase.auth.getUser()
-
-    if (!user) return unauthorized()
-    if (error) {
-        if (isAuthApiError(error) && error.status && error.status < 500) {
-            return authError(error.status, error.message)
-        }
-
-        console.error("[story]", error)
-
-        return internalServerError()
-    }
+    const user = await getUserFromSupabase()
+    if (user instanceof NextResponse) return user
 
     // Rate limit
     try {
-        await storyCreateLimiter.consume(user.id)
+        await storyCreationLimiter.consume(user.id)
     } catch {
         return NextResponse.json({
             title: 'Too Many Requests',
@@ -95,6 +84,7 @@ export async function POST(request: NextRequest) {
 export async function GET(request: NextRequest) {
     const queryParams = request.nextUrl.searchParams
 
+    // Vérification format
     const result = queryParamSchema.safeParse(Object.fromEntries(queryParams))
 
     if (!result.success) {
@@ -109,6 +99,7 @@ export async function GET(request: NextRequest) {
 
     const validQueryParams = result.data
 
+    // Préparation des filtres
     const conditions: SQL[] = []
 
     if (validQueryParams.title) {
@@ -123,9 +114,16 @@ export async function GET(request: NextRequest) {
         conditions.push(inArray(stories.profileId, validQueryParams.authors))
     }
 
-    const storyList = await db.select(storyWithoutGraph)
-    .from(stories)
-    .where(and(eq(stories.status, StoryStatus.published), ...conditions))
+    // Récupération des romans
+    const storyList = await db
+        .select(storyWithoutGraph)
+        .from(stories)
+        .where(
+            and(
+                eq(stories.status, StoryStatus.published),
+                ...conditions
+            )
+        )
 
     return NextResponse.json({
         data: storyList

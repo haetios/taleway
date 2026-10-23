@@ -1,26 +1,17 @@
 import { db } from "@/db";
 import { profiles, stories, StoryStatus } from "@/db/schema";
-import { authError, getSupabaseServerClient, internalServerError, unauthorized } from "@/lib/supabase";
+import { getUserFromSupabase } from "@/lib/supabase";
 import { storyWithoutGraph } from "@/types/story-without-graph";
-import { isAuthApiError } from "@supabase/supabase-js";
 import { and, eq, ne } from "drizzle-orm";
 import { NextRequest, NextResponse } from "next/server";
 
 export async function GET(_: NextRequest) {
-    const supabase = await getSupabaseServerClient()
-    const { data: { user }, error } = await supabase.auth.getUser()
 
-    if (!user) return unauthorized()
-    if (error) {
-        if (isAuthApiError(error) && error.status && error.status < 500) {
-            return authError(error.status, error.message)
-        }
+    // Vérification authentification
+    const user = await getUserFromSupabase()
+    if (user instanceof NextResponse) return user
 
-        console.error("[profile/stories]", error)
-
-        return internalServerError()
-    }
-
+    // Vérification profil
     const [profile] = await db.select({ id: profiles.id }).from(profiles).where(eq(profiles.id, user.id)).limit(1)
 
     if (!profile) {
@@ -31,6 +22,7 @@ export async function GET(_: NextRequest) {
         })
     }
 
+    // Récupération de tous les livres (hors archive)
     const storyList = await db
         .select(storyWithoutGraph)
         .from(stories)

@@ -3,10 +3,10 @@ import { Redis } from "ioredis";
 
 const redis = new Redis(process.env.REDIS_URL!)
 
-export const storyCreateLimiter = new RateLimiterRedis({
+export const storyCreationLimiter = new RateLimiterRedis({
     storeClient: redis,
     keyPrefix: "rl_story_create",
-    points: Number(process.env.RATE_LIMIT_STORY ?? 10),
+    points: Number(process.env.RATE_LIMIT_STORY_CREATION ?? 10),
     duration: 3600
 })
 
@@ -18,15 +18,15 @@ export const bookmarkLimiter = new RateLimiterRedis({
 });
 
 /** Écritures sensibles (PUT story) : 100/h et par utilisateur. */
-export const storyLimiter = new RateLimiterRedis({
+export const storyEditionLimiter = new RateLimiterRedis({
     storeClient: redis,
     keyPrefix: "rl_write",
-    points: Number(process.env.RATE_LIMIT_STORY ?? 250),
+    points: Number(process.env.RATE_LIMIT_STORY_EDITION ?? 250),
     duration: 3600
 });
 
 /** Suppressions (DELETE story, DELETE bookmark) : 10/h et par utilisateur. */
-export const deleteLimiter = new RateLimiterRedis({
+export const deletionLimiter = new RateLimiterRedis({
     storeClient: redis,
     keyPrefix: "rl_delete",
     points: Number(process.env.RATE_LIMIT_DELETE ?? 10),

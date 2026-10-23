@@ -1,7 +1,7 @@
 import { db } from "@/db";
 import { bookmarks, stories, StoryStatus } from "@/db/schema";
-import { deleteLimiter } from "@/lib/rate-limit";
-import { getSupabaseServerClient, authError, internalServerError, unauthorized } from "@/lib/supabase";
+import { deletionLimiter } from "@/lib/rate-limit";
+import { getSupabaseServerClient, authError, internalServerError, unauthorized, getUserFromSupabase } from "@/lib/supabase";
 import { slugRule } from "@/validations/rules";
 import { isAuthApiError } from "@supabase/supabase-js";
 import { and, eq } from "drizzle-orm";
@@ -88,6 +88,7 @@ export async function GET(_request: NextRequest, { params }: { params: Promise<{
 export async function DELETE(_request: NextRequest, { params }: { params: Promise<{ slug: string }> }) {
     const { slug } = await params
 
+    // Vérification format
     const result = slugRule.safeParse(slug)
 
     if (!result.success) {
@@ -102,23 +103,13 @@ export async function DELETE(_request: NextRequest, { params }: { params: Promis
 
     const validSlug = result.data
 
-    const supabase = await getSupabaseServerClient()
-    const { data: { user }, error } = await supabase.auth.getUser()
-
-    if (!user) return unauthorized()
-    if (error) {
-        if (isAuthApiError(error) && error.status && error.status < 500) {
-            return authError(error.status, error.message)
-        }
-
-        console.error("[bookmark/[slug]]", error)
-
-        return internalServerError()
-    }
+    // Vérification authentification
+    const user = await getUserFromSupabase()
+    if (user instanceof NextResponse) return user
 
     // Rate limit — DELETE (suppression)
     try {
-        await deleteLimiter.consume(user.id)
+        await deletionLimiter.consume(user.id)
     } catch (rejRes) {
         const seconds = Math.ceil((rejRes as { msBeforeNext: number }).msBeforeNext / 1000)
         return NextResponse.json({
@@ -131,6 +122,7 @@ export async function DELETE(_request: NextRequest, { params }: { params: Promis
         })
     }
 
+    // Vérification existence du roman
     const [existingStory] = await db
         .select({ id: stories.id })
         .from(stories)
@@ -151,6 +143,7 @@ export async function DELETE(_request: NextRequest, { params }: { params: Promis
         })
     }
 
+    // Suppression du marque-page
     const [deletedBookmark] = await db
         .delete(bookmarks)
         .where(

@@ -1,7 +1,7 @@
 import { db } from "@/db";
 import { profiles } from "@/db/schema";
 import { parseJsonBody } from "@/lib/parse-json-body";
-import { authError, getSupabaseServerClient, internalServerError, unauthorized } from "@/lib/supabase";
+import { authError, getSupabaseServerClient, getUserFromSupabase, internalServerError, unauthorized } from "@/lib/supabase";
 import { usernameRule } from "@/validations/rules/username";
 import { isAuthApiError } from "@supabase/supabase-js";
 import { eq } from "drizzle-orm";
@@ -27,19 +27,8 @@ export async function POST(request: NextRequest) {
     const validUsername = result.data
 
     // Vérification authentification
-    const supabase = await getSupabaseServerClient()
-    const { data: { user: currentUser }, error } = await supabase.auth.getUser()
-
-    if (!currentUser) return unauthorized()
-    if (error) {
-        if (isAuthApiError(error) && error.status && error.status < 500) {
-            return authError(error.status, error.message)
-        }
-
-        console.error("[auth/profile]", error)
-
-        return internalServerError()
-    }
+    const user = await getUserFromSupabase()
+    if (user instanceof NextResponse) return user
 
     // Vérification existence du pseudo
     const [existingUsername] = await db
@@ -59,7 +48,7 @@ export async function POST(request: NextRequest) {
     }
 
     // Ajout du profil
-    await db.insert(profiles).values({ id: currentUser.id, username: validUsername })
+    await db.insert(profiles).values({ id: user.id, username: validUsername })
 
     return NextResponse.json(null, { status: 201 })
 }

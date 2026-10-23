@@ -1,4 +1,5 @@
 import { createServerClient } from "@supabase/ssr"
+import { isAuthApiError } from "@supabase/supabase-js"
 import { cookies } from "next/headers"
 import { NextResponse } from "next/server"
 
@@ -25,6 +26,24 @@ export async function getSupabaseServerClient() {
       },
     }
   )
+}
+
+export async function getUserFromSupabase() {
+  const supabase = await getSupabaseServerClient()
+  const { data: { user }, error } = await supabase.auth.getUser()
+
+  if (!user) return unauthorized()
+  if (error) {
+      if (isAuthApiError(error) && error.status && error.status < 500) {
+          return authError(error.status, error.message)
+      }
+
+      console.error("[story/[slug]]", error)
+
+      return internalServerError()
+  }
+
+  return user
 }
 
 export function unauthorized(message?: string) {

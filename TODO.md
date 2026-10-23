@@ -31,13 +31,15 @@
 - [X] API : PUT     /profile/settings
 - [X] TESTS : Ajouter des tests pour API -> GET/PUT `/profile/settings`
 
-- [X] Rajouter un anti-spam au niveau de l'API
+- [X] Rajouter un anti-spam au niveau de l'API (rate-limit)
 - [ ] Ajouter messages d'erreurs personnalisés pour les validations Zod
 
 - [ ] Refactor !!!! (existing..., if (supabase.auth), return response, etc.)
     - Beaucoup de code dupliqué
 - [ ] Commentaires !!!!
 
+- [ ] API : POST    /auth/logout
+- [ ] API : DELETE  /profile/ID
 ---
 
 - [ ] PENPOT (figma open source) - style papier, livre, bibliothèque, épuré, couleurs claires, ...

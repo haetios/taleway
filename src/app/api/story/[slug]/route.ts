@@ -1,8 +1,8 @@
 import { db } from "@/db";
 import { stories, Story, StoryStatus } from "@/db/schema";
 import { parseJsonBody } from "@/lib/parse-json-body";
-import { storyLimiter, deleteLimiter } from "@/lib/rate-limit";
-import { authError, getSupabaseServerClient, internalServerError, unauthorized } from "@/lib/supabase";
+import { storyEditionLimiter, deletionLimiter } from "@/lib/rate-limit";
+import { authError, getSupabaseServerClient, getUserFromSupabase, internalServerError, unauthorized } from "@/lib/supabase";
 import { slugRule } from "@/validations/rules/slug";
 import { editStorySchema } from "@/validations/schemas/edit-story";
 import { isAuthApiError } from "@supabase/supabase-js";
@@ -149,23 +149,12 @@ export async function PUT(
 
 
     // Vérification authentification
-    const supabase = await getSupabaseServerClient()
-    const { data: { user }, error } = await supabase.auth.getUser()
+    const user = await getUserFromSupabase()
+    if (user instanceof NextResponse) return user
 
-    if (!user) return unauthorized()
-    if (error) {
-        if (isAuthApiError(error) && error.status && error.status < 500) {
-            return authError(error.status, error.message)
-        }
-
-        console.error("[story/[slug]]", error)
-
-        return internalServerError()
-    }
-
-    // Rate limit — PUT (écriture)
+    // Rate limit
     try {
-        await storyLimiter.consume(user.id)
+        await storyEditionLimiter.consume(user.id)
     } catch (rejRes) {
         const seconds = Math.ceil((rejRes as { msBeforeNext: number }).msBeforeNext / 1000)
         return NextResponse.json({
@@ -178,7 +167,7 @@ export async function PUT(
         })
     }
 
-    // Vérification existence d'une histoire ayant le même titre pour l'utilisateur courant
+    // Vérification existence d'un roman (même titre + utilisateur courant)
     if (validBody.title) {
         const [existingTitle] = await db
         .select({ title: stories.title })
@@ -202,7 +191,7 @@ export async function PUT(
         }
     }
 
-    // Mise à jour et vérification existence de l'histoire appartenant à l'utilisateur courant
+    // Mise à jour du roman (utilisateur courant, si existant)
     const [editedStory] = await db
         .update(stories)
         .set(validBody)
@@ -232,6 +221,7 @@ export async function PUT(
 export async function DELETE(_: NextRequest, { params }: { params: Promise<{ slug: string }> }) {
     const { slug } = await params
 
+    // Vérification format
     const result = slugRule.safeParse(slug)
 
     if (!result.success) {
@@ -247,23 +237,12 @@ export async function DELETE(_: NextRequest, { params }: { params: Promise<{ slu
     const validSlug = result.data
 
     // Vérification authentification
-    const supabase = await getSupabaseServerClient()
-    const { data: { user }, error } = await supabase.auth.getUser()
+    const user = await getUserFromSupabase()
+    if (user instanceof NextResponse) return user
 
-    if (!user) return unauthorized()
-    if (error) {
-        if (isAuthApiError(error) && error.status && error.status < 500) {
-            return authError(error.status, error.message)
-        }
-
-        console.error("[story/[slug]]", error)
-
-        return internalServerError()
-    }
-
-    // Rate limit — DELETE (suppression)
+    // Rate limit
     try {
-        await deleteLimiter.consume(user.id)
+        await deletionLimiter.consume(user.id)
     } catch (rejRes) {
         const seconds = Math.ceil((rejRes as { msBeforeNext: number }).msBeforeNext / 1000)
         return NextResponse.json({
@@ -276,6 +255,7 @@ export async function DELETE(_: NextRequest, { params }: { params: Promise<{ slu
         })
     }
 
+    // Suppression du roman (si existant)
     const [deletedStory] = await db
         .update(stories)
         .set({ status: StoryStatus.archived })
