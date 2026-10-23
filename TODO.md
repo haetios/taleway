@@ -40,8 +40,16 @@
     - Rate limit
 - [X] Commentaires !!!!
 
+- [X] API : DELETE  /profile/ID
+
+- [ ] Demander à l'IA de :
+    - compacter la session
+    - Vérifier le code modifié depuis la dernière fois (git log) et trouver de possible bugs dans les 2 nouveaux endpoints ("POST /auth/logout" et "DELETE /profile/ID")
+    - Trouver le bug avec les tests : Les tests parfois ne fonctionnent pas sans que rien ne change (skipped avec erreur : Aucun code OTP reçu par bmpostauthor-1792764679690_6yee@taleway.dev dans les 10000ms)
+    - générer les tests pour "POST /auth/logout" et "DELETE /profile/ID"
+
 - [ ] Ajouter messages d'erreurs personnalisés pour les validations Zod
-- [ ] API : DELETE  /profile/ID
+
 ---
 
 - [ ] PENPOT (figma open source) - style papier, livre, bibliothèque, épuré, couleurs claires, ...

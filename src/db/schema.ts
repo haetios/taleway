@@ -31,7 +31,7 @@ export type NewProfile = typeof profiles.$inferInsert;
 
 export const stories = pgTable("stories", {
   id: serial().primaryKey(),
-  profileId: uuid('profile_id').notNull().references(() => profiles.id),
+  profileId: uuid('profile_id').references(() => profiles.id, { onDelete: 'set null' } ),
   title: varchar({ length: 255 }).notNull(),
   slug: varchar({ length: 255 }).notNull().unique(),
   blurb: text(), // Résumé (quatrière de couverture)
@@ -48,8 +48,8 @@ export type NewStory = typeof stories.$inferInsert;
 
 export const bookmarks = pgTable("bookmarks", {
     id: serial().primaryKey(),
-    profileId: uuid('profile_id').notNull().references(() => profiles.id),
-    storyId: integer('story_id').notNull().references(() => stories.id),
+    profileId: uuid('profile_id').notNull().references(() => profiles.id, { onDelete: 'cascade' }),
+    storyId: integer('story_id').notNull().references(() => stories.id, { onDelete: 'cascade' }),
     nodeId: text('node_id').notNull(),
     variables: json(),
     createdAt: timestamp('created_at', { withTimezone: true }).defaultNow().notNull(),

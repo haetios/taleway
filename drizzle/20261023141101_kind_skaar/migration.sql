@@ -1,0 +1,4 @@
+ALTER TABLE "stories" ALTER COLUMN "profile_id" DROP NOT NULL;--> statement-breakpoint
+ALTER TABLE "bookmarks" DROP CONSTRAINT "bookmarks_profile_id_profiles_id_fkey", ADD CONSTRAINT "bookmarks_profile_id_profiles_id_fkey" FOREIGN KEY ("profile_id") REFERENCES "profiles"("id") ON DELETE CASCADE;--> statement-breakpoint
+ALTER TABLE "bookmarks" DROP CONSTRAINT "bookmarks_story_id_stories_id_fkey", ADD CONSTRAINT "bookmarks_story_id_stories_id_fkey" FOREIGN KEY ("story_id") REFERENCES "stories"("id") ON DELETE CASCADE;--> statement-breakpoint
+ALTER TABLE "stories" DROP CONSTRAINT "stories_profile_id_profiles_id_fkey", ADD CONSTRAINT "stories_profile_id_profiles_id_fkey" FOREIGN KEY ("profile_id") REFERENCES "profiles"("id") ON DELETE SET NULL;

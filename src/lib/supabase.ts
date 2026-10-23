@@ -1,8 +1,21 @@
 import { createServerClient } from "@supabase/ssr"
-import { isAuthApiError } from "@supabase/supabase-js"
+import { createClient, isAuthApiError } from "@supabase/supabase-js"
 import { cookies } from "next/headers"
 import { NextResponse } from "next/server"
 import { s401, s500 } from "./responses"
+
+export async function getSupabaseAdminClient() {
+  return createClient(
+    process.env.NEXT_PUBLIC_SUPABASE_URL!,
+    process.env.SUPABASE_SECRET_KEY!,
+    {
+      auth: {
+        autoRefreshToken: false,
+        persistSession: false
+      }
+    }
+  )
+}
 
 export async function getSupabaseServerClient() {
   const cookieStore = await cookies()

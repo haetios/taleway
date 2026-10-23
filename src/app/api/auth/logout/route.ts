@@ -1,4 +1,4 @@
-import { s500 } from "@/lib/responses";
+import { s200, s500 } from "@/lib/responses";
 import { authError, getSupabaseServerClient } from "@/lib/supabase";
 import { isAuthApiError } from "@supabase/supabase-js";
 import { NextRequest } from "next/server";
@@ -16,4 +16,6 @@ export async function POST(_: NextRequest) {
 
         return s500()
     }
+
+    return s200()
 }
