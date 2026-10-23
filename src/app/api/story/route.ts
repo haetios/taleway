@@ -3,11 +3,10 @@ import { stories, StoryStatus } from "@/db/schema";
 import { parseJsonBody } from "@/lib/parse-json-body";
 import { storyCreationLimiter } from "@/lib/rate-limit";
 import { buildSlug } from "@/lib/slug";
-import { authError, getSupabaseServerClient, getUserFromSupabase, internalServerError, unauthorized } from "@/lib/supabase";
+import { getUserFromSupabase } from "@/lib/supabase";
 import { storyWithoutGraph } from "@/types/story-without-graph";
 import { titleRule } from "@/validations/rules/title";
 import { queryParamSchema } from "@/validations/schemas/query-params";
-import { isAuthApiError } from "@supabase/supabase-js";
 import { and, eq, inArray, like, ne, SQL } from "drizzle-orm";
 import { NextRequest, NextResponse } from "next/server";
 

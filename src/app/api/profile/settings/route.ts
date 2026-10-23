@@ -1,10 +1,9 @@
 import { db } from "@/db";
 import { profiles } from "@/db/schema";
 import { parseJsonBody } from "@/lib/parse-json-body";
-import { authError, getSupabaseServerClient, getUserFromSupabase, internalServerError, unauthorized } from "@/lib/supabase";
+import { getSupabaseServerClient, getUserFromSupabase } from "@/lib/supabase";
 import { settingsLimiter } from "@/lib/rate-limit";
 import { settingsSchema } from "@/validations/schemas/settings";
-import { isAuthApiError } from "@supabase/supabase-js";
 import { eq } from "drizzle-orm";
 import { NextRequest, NextResponse } from "next/server";
 

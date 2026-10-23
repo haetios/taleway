@@ -2,9 +2,8 @@ import { db } from "@/db";
 import { bookmarks, stories, StoryStatus } from "@/db/schema";
 import { parseJsonBody } from "@/lib/parse-json-body";
 import { bookmarkLimiter } from "@/lib/rate-limit";
-import { authError, getSupabaseServerClient, getUserFromSupabase, internalServerError, unauthorized } from "@/lib/supabase";
+import { getUserFromSupabase } from "@/lib/supabase";
 import { bookmarkSchema } from "@/validations/schemas/bookmark";
-import { isAuthApiError } from "@supabase/supabase-js";
 import { and, eq } from "drizzle-orm";
 import { NextRequest, NextResponse } from "next/server";
 
