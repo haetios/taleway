@@ -2,7 +2,7 @@ import { db } from "@/db";
 import { profiles } from "@/db/schema";
 import { parseJsonBody } from "@/lib/parse-json-body";
 import { getSupabaseServerClient, getUserFromSupabase } from "@/lib/supabase";
-import { settingsLimiter } from "@/lib/rate-limit";
+import { rateLimit, settingsLimiter } from "@/lib/rate-limit";
 import { settingsSchema } from "@/validations/schemas/settings";
 import { eq } from "drizzle-orm";
 import { NextRequest, NextResponse } from "next/server";
@@ -46,19 +46,8 @@ export async function PUT(request: NextRequest) {
     if (user instanceof NextResponse) return user
 
     // Rate limit
-    try {
-        await settingsLimiter.consume(user.id)
-    } catch (rejRes) {
-        const seconds = Math.ceil((rejRes as { msBeforeNext: number }).msBeforeNext / 1000)
-        return NextResponse.json({
-            title: 'Too Many Requests',
-            status: 429,
-            detail: 'Rate limit exceeded, try again later'
-        }, {
-            status: 429,
-            headers: { 'Retry-After': String(seconds) }
-        })
-    }
+    const rl = await rateLimit(settingsLimiter, user.id)
+    if (rl instanceof NextResponse) return rl
 
     // Vérification profil
     const [existingProfile] = await db.select().from(profiles).where(eq(profiles.id, user.id))

@@ -1,7 +1,24 @@
 import { RateLimiterRedis } from "rate-limiter-flexible";
 import { Redis } from "ioredis";
+import { NextResponse } from "next/server";
 
 const redis = new Redis(process.env.REDIS_URL!)
+
+export async function rateLimit(limiter: RateLimiterRedis, id: string) {
+    try {
+        await limiter.consume(id)
+    } catch (rejRes) {
+        const seconds = Math.ceil((rejRes as { msBeforeNext: number }).msBeforeNext / 1000)
+        return NextResponse.json({
+            title: 'Too Many Requests',
+            status: 429,
+            detail: 'Rate limit exceeded, try again later'
+        }, {
+            status: 429,
+            headers: { 'Retry-After': String(seconds) }
+        })
+    }
+}
 
 export const storyCreationLimiter = new RateLimiterRedis({
     storeClient: redis,

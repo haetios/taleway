@@ -1,6 +1,6 @@
 import { db } from "@/db";
 import { bookmarks, stories, StoryStatus } from "@/db/schema";
-import { deletionLimiter } from "@/lib/rate-limit";
+import { deletionLimiter, rateLimit } from "@/lib/rate-limit";
 import { s200, s204, s400, s404 } from "@/lib/responses";
 import { getUserFromSupabase } from "@/lib/supabase";
 import { slugRule } from "@/validations/rules";
@@ -73,19 +73,8 @@ export async function DELETE(_request: NextRequest, { params }: { params: Promis
     if (user instanceof NextResponse) return user
 
     // Rate limit
-    try {
-        await deletionLimiter.consume(user.id)
-    } catch (rejRes) {
-        const seconds = Math.ceil((rejRes as { msBeforeNext: number }).msBeforeNext / 1000)
-        return NextResponse.json({
-            title: 'Too Many Requests',
-            status: 429,
-            detail: 'Rate limit exceeded, try again later'
-        }, {
-            status: 429,
-            headers: { 'Retry-After': String(seconds) }
-        })
-    }
+    const rl = await rateLimit(deletionLimiter, user.id)
+    if (rl instanceof NextResponse) return rl
 
     // Vérification existence du roman
     const [existingStory] = await db

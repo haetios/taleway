@@ -1,7 +1,7 @@
 import { db } from "@/db";
 import { stories, Story, StoryStatus } from "@/db/schema";
 import { parseJsonBody } from "@/lib/parse-json-body";
-import { storyEditionLimiter, deletionLimiter } from "@/lib/rate-limit";
+import { storyEditionLimiter, deletionLimiter, rateLimit } from "@/lib/rate-limit";
 import { s200, s204, s400, s401, s404, s409, s500 } from "@/lib/responses";
 import { authError, getSupabaseServerClient, getUserFromSupabase } from "@/lib/supabase";
 import { slugRule } from "@/validations/rules/slug";
@@ -126,19 +126,8 @@ export async function PUT(
     if (user instanceof NextResponse) return user
 
     // Rate limit
-    try {
-        await storyEditionLimiter.consume(user.id)
-    } catch (rejRes) {
-        const seconds = Math.ceil((rejRes as { msBeforeNext: number }).msBeforeNext / 1000)
-        return NextResponse.json({
-            title: 'Too Many Requests',
-            status: 429,
-            detail: 'Rate limit exceeded, try again later'
-        }, {
-            status: 429,
-            headers: { 'Retry-After': String(seconds) }
-        })
-    }
+    const rl = await rateLimit(storyEditionLimiter, user.id)
+    if (rl instanceof NextResponse) return rl
 
     // Vérification existence d'un roman (même titre + utilisateur courant)
     if (validBody.title) {
@@ -196,19 +185,8 @@ export async function DELETE(_: NextRequest, { params }: { params: Promise<{ slu
     if (user instanceof NextResponse) return user
 
     // Rate limit
-    try {
-        await deletionLimiter.consume(user.id)
-    } catch (rejRes) {
-        const seconds = Math.ceil((rejRes as { msBeforeNext: number }).msBeforeNext / 1000)
-        return NextResponse.json({
-            title: 'Too Many Requests',
-            status: 429,
-            detail: 'Rate limit exceeded, try again later'
-        }, {
-            status: 429,
-            headers: { 'Retry-After': String(seconds) }
-        })
-    }
+    const rl = await rateLimit(deletionLimiter, user.id)
+    if (rl instanceof NextResponse) return rl
 
     // Suppression du roman (si existant)
     const [deletedStory] = await db

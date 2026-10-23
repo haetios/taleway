@@ -1,7 +1,7 @@
 import { db } from "@/db";
 import { bookmarks, stories, StoryStatus } from "@/db/schema";
 import { parseJsonBody } from "@/lib/parse-json-body";
-import { bookmarkLimiter } from "@/lib/rate-limit";
+import { bookmarkLimiter, rateLimit } from "@/lib/rate-limit";
 import { s200, s400, s404 } from "@/lib/responses";
 import { getUserFromSupabase } from "@/lib/supabase";
 import { bookmarkSchema } from "@/validations/schemas/bookmark";
@@ -26,19 +26,8 @@ export async function POST(request: NextRequest) {
     if (user instanceof NextResponse) return user
 
     // Rate limit
-    try {
-        await bookmarkLimiter.consume(user.id)
-    } catch (rejRes) {
-        const seconds = Math.ceil((rejRes as { msBeforeNext: number }).msBeforeNext / 1000)
-        return NextResponse.json({
-            title: 'Too Many Requests',
-            status: 429,
-            detail: 'Rate limit exceeded, try again later'
-        }, {
-            status: 429,
-            headers: { 'Retry-After': String(seconds) }
-        })
-    }
+    const rl = await rateLimit(bookmarkLimiter, user.id)
+    if (rl instanceof NextResponse) return rl
 
     // Vérification existence du roman
     const [existingStory] = await db

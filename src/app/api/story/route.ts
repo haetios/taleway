@@ -1,7 +1,7 @@
 import { db } from "@/db";
 import { stories, StoryStatus } from "@/db/schema";
 import { parseJsonBody } from "@/lib/parse-json-body";
-import { storyCreationLimiter } from "@/lib/rate-limit";
+import { rateLimit, storyCreationLimiter } from "@/lib/rate-limit";
 import { s200, s201, s400, s409 } from "@/lib/responses";
 import { buildSlug } from "@/lib/slug";
 import { getUserFromSupabase } from "@/lib/supabase";
@@ -30,19 +30,8 @@ export async function POST(request: NextRequest) {
     if (user instanceof NextResponse) return user
 
     // Rate limit
-    try {
-        await storyCreationLimiter.consume(user.id)
-    } catch (rejRes) {
-        const seconds = Math.ceil((rejRes as { msBeforeNext: number }).msBeforeNext / 1000)
-        return NextResponse.json({
-            title: 'Too Many Requests',
-            status: 429,
-            detail: 'Rate limit exceeded, try again later'
-        }, {
-            status: 429,
-            headers: { 'Retry-After': String(seconds) }
-        })
-    }
+    const rl = await rateLimit(storyCreationLimiter, user.id)
+    if (rl instanceof NextResponse) return rl
 
     // Vérification existence du titre
     const [existingTitle] = await db
