@@ -10,6 +10,19 @@ jobs:
   ci:
     runs-on: ubuntu-latest
 
+    # Redis pour le rate limit (rate-limiter-flexible)
+    # Disponible sur 127.0.0.1:6379 comme en local (docker compose)
+    services:
+      redis:
+        image: redis:7
+        ports:
+          - 6379:6379
+        options: >-
+          --health-cmd "redis-cli ping"
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 5
+
     steps:
       - name: Checkout
         uses: actions/checkout@v7
@@ -59,6 +72,9 @@ jobs:
 
       - name: Start Next.js dev server
         run: |
+          export REDIS_URL="redis://127.0.0.1:6379"
+          export RATE_LIMIT_STORY="10"
+          export RATE_LIMIT_BOOKMARK="60"
           nohup pnpm dev > next-dev.log 2>&1 &
           echo $! > next-dev.pid
           timeout 90 bash -c 'until curl -sf http://localhost:3000 -o /dev/null; do

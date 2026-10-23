@@ -31,7 +31,7 @@
 - [ ] API : PUT     /profile/settings
 - [ ] TESTS : Ajouter des tests pour API -> GET/PUT `/profile/settings`
 
-- [ ] Rajouter un anti-spam au niveau de l'API
+- [X] Rajouter un anti-spam au niveau de l'API
 - [ ] Ajouter message d'erreur personnalisé pour les validations Zod
 
 ---
@@ -68,3 +68,6 @@
 ### Montée en gamme
 - [ ] Passage de micro-entreprise à SAS
 - [ ] Arrivée d'une collaboratrice ?
+
+### Visée internationale
+- [ ] Ajouter langues (locales)
