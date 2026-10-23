@@ -9,7 +9,7 @@ export const editStorySchema = z.object({
     status: statusRule.optional(),
     coverUrl: coverRule.optional()
 }).refine((data) => Object.keys(data).length > 0, {
-  message: "Au moins un champ à modifier"
+  message: "At least one field to update"
 })
 
 export type EditStorySchema = z.infer<typeof editStorySchema>

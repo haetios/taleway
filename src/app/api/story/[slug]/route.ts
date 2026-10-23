@@ -1,6 +1,7 @@
 import { db } from "@/db";
 import { stories, Story, StoryStatus } from "@/db/schema";
 import { parseJsonBody } from "@/lib/parse-json-body";
+import { storyLimiter, deleteLimiter } from "@/lib/rate-limit";
 import { authError, getSupabaseServerClient, internalServerError, unauthorized } from "@/lib/supabase";
 import { slugRule } from "@/validations/rules/slug";
 import { editStorySchema } from "@/validations/schemas/edit-story";
@@ -162,6 +163,21 @@ export async function PUT(
         return internalServerError()
     }
 
+    // Rate limit — PUT (écriture)
+    try {
+        await storyLimiter.consume(user.id)
+    } catch (rejRes) {
+        const seconds = Math.ceil((rejRes as { msBeforeNext: number }).msBeforeNext / 1000)
+        return NextResponse.json({
+            title: 'Too Many Requests',
+            status: 429,
+            detail: 'Rate limit exceeded, try again later'
+        }, {
+            status: 429,
+            headers: { 'Retry-After': String(seconds) }
+        })
+    }
+
     // Vérification existence d'une histoire ayant le même titre pour l'utilisateur courant
     if (validBody.title) {
         const [existingTitle] = await db
@@ -243,6 +259,21 @@ export async function DELETE(_: NextRequest, { params }: { params: Promise<{ slu
         console.error("[story/[slug]]", error)
 
         return internalServerError()
+    }
+
+    // Rate limit — DELETE (suppression)
+    try {
+        await deleteLimiter.consume(user.id)
+    } catch (rejRes) {
+        const seconds = Math.ceil((rejRes as { msBeforeNext: number }).msBeforeNext / 1000)
+        return NextResponse.json({
+            title: 'Too Many Requests',
+            status: 429,
+            detail: 'Rate limit exceeded, try again later'
+        }, {
+            status: 429,
+            headers: { 'Retry-After': String(seconds) }
+        })
     }
 
     const [deletedStory] = await db

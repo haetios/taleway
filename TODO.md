@@ -27,16 +27,22 @@
 - [X] API : POST    /bookmark
 - [X] TESTS : Ajouter des tests pour API -> POST `/bookmark`
 
-- [ ] API : GET     /profile/settings
-- [ ] API : PUT     /profile/settings
-- [ ] TESTS : Ajouter des tests pour API -> GET/PUT `/profile/settings`
+- [X] API : GET     /profile/settings
+- [X] API : PUT     /profile/settings
+- [X] TESTS : Ajouter des tests pour API -> GET/PUT `/profile/settings`
 
 - [X] Rajouter un anti-spam au niveau de l'API
-- [ ] Ajouter message d'erreur personnalisé pour les validations Zod
+- [ ] Ajouter messages d'erreurs personnalisés pour les validations Zod
+
+- [ ] Refactor !!!! (existing..., if (supabase.auth), return response, etc.)
+    - Beaucoup de code dupliqué
+- [ ] Commentaires !!!!
 
 ---
 
 - [ ] PENPOT (figma open source) - style papier, livre, bibliothèque, épuré, couleurs claires, ...
+
+- [ ] Préparer composants (boutons, champs, etc...)
 
 - [ ] Ajouter une page de connexion/inscription fonctionnelle pour :
     - synchro entre plusieurs appareil
@@ -64,6 +70,8 @@
 ### Monétisation
 - [ ] Outil premium de confort (stats, thèmes, ...)
 - [ ] Création micro-entreprise
+- [ ] Ecriture des CGV
+- [ ] Préparation des factures
 
 ### Montée en gamme
 - [ ] Passage de micro-entreprise à SAS

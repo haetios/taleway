@@ -93,3 +93,60 @@ describe("GET /api/profile/stories", () => {
     }
   });
 });
+
+describe("GET/PUT /api/profile/settings", () => {
+  let user: TestUser;
+
+  beforeAll(async () => {
+    user = await createTestUser("settings");
+  });
+
+  it("401 — GET sans session", async () => {
+    const { res } = await request("/api/profile/settings", "GET");
+    expect(res.status).toBe(401);
+  });
+
+  it("401 — PUT sans session", async () => {
+    const { res } = await request("/api/profile/settings", "PUT", { bio: "Salut" });
+    expect(res.status).toBe(401);
+  });
+
+  it("200 — GET renvoie email, username, bio", async () => {
+    const { res, json } = await request("/api/profile/settings", "GET", undefined, user.cookie);
+    expect(res.status).toBe(200);
+    expect(json.data.email).toBe(user.email);
+    expect(json.data.username).toBe(user.username);
+    expect(json.data.bio).toBeNull();
+  });
+
+  it("400 — PUT avec body vide", async () => {
+    const { res } = await request("/api/profile/settings", "PUT", {}, user.cookie);
+    expect(res.status).toBe(400);
+  });
+
+  it("204 → 200 — PUT bio seule, puis GET confirme", async () => {
+    const { res: putRes } = await request(
+      "/api/profile/settings",
+      "PUT",
+      { bio: "Nouvelle bio de test" },
+      user.cookie
+    );
+    expect([200, 204]).toContain(putRes.status);
+
+    const { res: getRes, json } = await request("/api/profile/settings", "GET", undefined, user.cookie);
+    expect(getRes.status).toBe(200);
+    expect(json.data.bio).toBe("Nouvelle bio de test");
+  });
+
+  it("409 — PUT vers un username déjà pris", async () => {
+    const other = await createTestUser("settingsother");
+
+    const { res } = await request(
+      "/api/profile/settings",
+      "PUT",
+      { username: other.username },
+      user.cookie
+    );
+    expect(res.status).toBe(409);
+  });
+});

@@ -16,3 +16,27 @@ export const bookmarkLimiter = new RateLimiterRedis({
   points: Number(process.env.RATE_LIMIT_BOOKMARK ?? 60),
   duration: 60, // 1 minute
 });
+
+/** Écritures sensibles (PUT story) : 100/h et par utilisateur. */
+export const storyLimiter = new RateLimiterRedis({
+    storeClient: redis,
+    keyPrefix: "rl_write",
+    points: Number(process.env.RATE_LIMIT_STORY ?? 250),
+    duration: 3600
+});
+
+/** Suppressions (DELETE story, DELETE bookmark) : 10/h et par utilisateur. */
+export const deleteLimiter = new RateLimiterRedis({
+    storeClient: redis,
+    keyPrefix: "rl_delete",
+    points: Number(process.env.RATE_LIMIT_DELETE ?? 10),
+    duration: 3600
+});
+
+/** Changements de settings (PUT settings) : 5/min et par utilisateur. */
+export const settingsLimiter = new RateLimiterRedis({
+    storeClient: redis,
+    keyPrefix: "rl_settings",
+    points: Number(process.env.RATE_LIMIT_SETTINGS ?? 5),
+    duration: 60
+});

@@ -1,5 +1,6 @@
 import { db } from "@/db";
 import { bookmarks, stories, StoryStatus } from "@/db/schema";
+import { deleteLimiter } from "@/lib/rate-limit";
 import { getSupabaseServerClient, authError, internalServerError, unauthorized } from "@/lib/supabase";
 import { slugRule } from "@/validations/rules";
 import { isAuthApiError } from "@supabase/supabase-js";
@@ -113,6 +114,21 @@ export async function DELETE(_request: NextRequest, { params }: { params: Promis
         console.error("[bookmark/[slug]]", error)
 
         return internalServerError()
+    }
+
+    // Rate limit — DELETE (suppression)
+    try {
+        await deleteLimiter.consume(user.id)
+    } catch (rejRes) {
+        const seconds = Math.ceil((rejRes as { msBeforeNext: number }).msBeforeNext / 1000)
+        return NextResponse.json({
+            title: 'Too Many Requests',
+            status: 429,
+            detail: 'Rate limit exceeded, try again later'
+        }, {
+            status: 429,
+            headers: { 'Retry-After': String(seconds) }
+        })
     }
 
     const [existingStory] = await db
