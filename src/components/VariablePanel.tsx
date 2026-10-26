@@ -48,7 +48,7 @@ export default function VariablePanel({ variables, onAddVariable, onRemoveVariab
                                 <select
                                     className="col-span-3 input-primary"
                                     value={String(variable.value)}
-                                    onChange={(e) => onVariableChange(index, 'value', Boolean(e.currentTarget.value))}
+                                    onChange={(e) => onVariableChange(index, 'value', e.currentTarget.value === 'true')}
                                 >
                                     <option value="true">true</option>
                                     <option value="false">false</option>

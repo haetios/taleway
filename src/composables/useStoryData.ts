@@ -48,10 +48,10 @@ export default function useStoryData() {
         }
 
         setStory(data.story);
-        setNodes(data.story.graph.nodes ?? createDefaultNodes());
-        setEdges(data.story.graph.edges ?? createDefaultEdges());
-        setVariables(data.story.graph.variables ?? []);
-        setTriggers(data.story.graph.triggers ?? []);
+        setNodes(data.story.graph?.nodes ?? createDefaultNodes());
+        setEdges(data.story.graph?.edges ?? createDefaultEdges());
+        setVariables(data.story.graph?.variables ?? []);
+        setTriggers(data.story.graph?.triggers ?? []);
         return true;
     }, [])
 

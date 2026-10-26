@@ -5,6 +5,16 @@ import useStoryData from "./useStoryData";
 import { isNode } from "@xyflow/react";
 import { ConditionGroup, ContentItem, NodeData, StoryEdge, StoryNode, Variable, Assignment, Trigger, Condition, TriggerAction } from "@/types";
 
+// Valeur par défaut d'une condition/assignment selon le type de la variable
+export const defaultValueForVariable = (variable: Variable | undefined): string => {
+    if (!variable) return '';
+    switch (variable.type) {
+        case 'boolean': return 'true';
+        case 'number': return '0';
+        default: return '';
+    }
+}
+
 export default function usePanelContent(
     storyData: ReturnType<typeof useStoryData>,
     setIsSaved: (value: boolean) => void
@@ -60,7 +70,7 @@ export default function usePanelContent(
                 current?.id === e.id
                     ? { ...e, data: { ...e.data, conditionGroups: e.data.conditionGroups.map((g, gi) =>
                         gi === groupIndex
-                            ? { ...g, conditions: [...g.conditions, { label: firstValidVariable.label, operation: '==', value: '' }]}
+                            ? { ...g, conditions: [...g.conditions, { label: firstValidVariable.label, operation: '==', value: defaultValueForVariable(firstValidVariable) }]}
                             : g
                       )}}
                     : e
@@ -104,7 +114,7 @@ export default function usePanelContent(
         storyData.setEdges((edges) =>
             edges.map((e) =>
                 current?.id === e.id
-                    ? { ...e, data: { ...e.data, assignments: [...(e.data.assignments ?? []), { label: firstValidVariable.label, operation: '=', value: '' }] }}
+                    ? { ...e, data: { ...e.data, assignments: [...(e.data.assignments ?? []), { label: firstValidVariable.label, operation: '=', value: defaultValueForVariable(firstValidVariable) }] }}
                     : e
             )
         );
@@ -126,9 +136,20 @@ export default function usePanelContent(
         storyData.setEdges((edges) =>
             edges.map((e) =>
                 current?.id === e.id
-                    ? { ...e, data: { ...e.data, assignments: (e.data.assignments ?? []).map((a, i) =>
-                        i === index ? { ...a, [field]: value } : a
-                      )}}
+                    ? { ...e, data: { ...e.data, assignments: (e.data.assignments ?? []).map((a, i) => {
+                        if (i !== index) return a;
+                        // Quand on change la variable, on réinitialise valeur et opération selon son type
+                        if (field === 'label') {
+                            const newVariable = storyData.variables.filter((v) => v.label === value).at(0);
+                            return {
+                                ...a,
+                                label: value,
+                                value: defaultValueForVariable(newVariable),
+                                operation: newVariable?.type === 'number' ? a.operation : '='
+                            };
+                        }
+                        return { ...a, [field]: value };
+                      })}}
                     : e
             )
         );
@@ -238,7 +259,7 @@ export default function usePanelContent(
         if (!firstValidVariable) return;
         storyData.setTriggers((triggers) => triggers.map((t, ti) =>
             ti === triggerIndex ? { ...t, conditionGroups: t.conditionGroups.map((g, gi) =>
-                gi === groupIndex ? { ...g, conditions: [...g.conditions, { label: firstValidVariable.label, operation: '==', value: '' }] } : g
+                gi === groupIndex ? { ...g, conditions: [...g.conditions, { label: firstValidVariable.label, operation: '==', value: defaultValueForVariable(firstValidVariable) }] } : g
             )} : t
         ));
         setIsSaved(false);
@@ -260,9 +281,21 @@ export default function usePanelContent(
     const onTriggerConditionsChanged = (triggerIndex: number, groupIndex: number, conditionIndex: number, field: keyof Condition, value: string) => {
         storyData.setTriggers((triggers) => triggers.map((t, ti) =>
             ti === triggerIndex ? { ...t, conditionGroups: t.conditionGroups.map((g, gi) =>
-                gi === groupIndex ? { ...g, conditions: g.conditions.map((c, ci) =>
-                    ci === conditionIndex ? { ...c, [field]: value } : c
-                )} : g
+                gi === groupIndex ? { ...g, conditions: g.conditions.map((c, ci) => {
+                    if (ci !== conditionIndex) return c;
+                    // Quand on change la variable, on réinitialise valeur et opération selon son type
+                    if (field === 'label') {
+                        const newVariable = storyData.variables.filter((v) => v.label === value).at(0);
+                        return {
+                            ...c,
+                            label: value,
+                            value: defaultValueForVariable(newVariable),
+                            // Les opérateurs de comparaison ne sont valables que sur les nombres
+                            operation: newVariable?.type === 'number' || !['>', '>=', '<', '<='].includes(c.operation) ? c.operation : '=='
+                        };
+                    }
+                    return { ...c, [field]: value };
+                })} : g
             )} : t
         ));
         setIsSaved(false);
@@ -286,8 +319,21 @@ export default function usePanelContent(
                 if (field === 'type') {
                     // Quand on change le type, on réinitialise l'action
                     if (value === 'redirect') return { type: 'redirect', target: '' };
-                    if (value === 'assignment') return { type: 'assignment', label: '', operation: '=', value: '' };
+                    if (value === 'assignment') {
+                        const firstValidVariable = storyData.variables.filter((v) => v.label !== '').at(0);
+                        return { type: 'assignment', label: firstValidVariable?.label ?? '', operation: '=', value: defaultValueForVariable(firstValidVariable) };
+                    }
                     return a;
+                }
+                // Quand on change la variable, on réinitialise valeur et opération selon son type
+                if (field === 'label' && a.type === 'assignment') {
+                    const newVariable = storyData.variables.filter((v) => v.label === value).at(0);
+                    return {
+                        ...a,
+                        label: value,
+                        value: defaultValueForVariable(newVariable),
+                        operation: newVariable?.type === 'number' ? a.operation : '='
+                    };
                 }
                 // Pour les autres champs, on garde le type et on met à jour le champ
                 return { ...a, [field]: value } as TriggerAction;

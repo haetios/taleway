@@ -3,6 +3,7 @@ import { Icon } from "@iconify/react"
 import { isEdge, isNode } from "@xyflow/react"
 import { DragDropProvider, type DragEndEvent } from "@dnd-kit/react"
 import SortableContentItem from "./SortableContentItem"
+import { defaultValueForVariable } from "@/composables/usePanelContent"
 import { useState } from "react"
 
 interface ContentPanelProps {
@@ -55,9 +56,21 @@ export default function ContentPanel ({
         if (!isEdge(element)) return;
         const newGroups = element.data.conditionGroups.map((g, gi) =>
             gi === groupIndex
-                ? { ...g, conditions: g.conditions.map((c, ci) =>
-                    ci === conditionIndex ? { ...c, [field]: value } : c
-                  )}
+                ? { ...g, conditions: g.conditions.map((c, ci) => {
+                    if (ci !== conditionIndex) return c;
+                    // Quand on change la variable, on réinitialise valeur et opération selon son type
+                    if (field === 'label') {
+                        const newVariable = getVariableByLabel(value);
+                        return {
+                            ...c,
+                            label: value,
+                            value: defaultValueForVariable(newVariable),
+                            // Les opérateurs de comparaison ne sont valables que sur les nombres
+                            operation: newVariable?.type === 'number' || !['>', '>=', '<', '<='].includes(c.operation) ? c.operation : '=='
+                        };
+                    }
+                    return { ...c, [field]: value };
+                  })}
                 : g
         );
         onDataChange('conditionGroups', newGroups)
