@@ -2,7 +2,7 @@
 
 ## Contexte projet
 
-Plateforme de **romans interactifs** (histoires à choix multiples, graphe de nœuds). Stack : **Next.js 16 (App Router) + Drizzle ORM v1.0-rc + Supabase (auth + local dev) + PostgreSQL + Tailwind v4 + vitest**. Style visuel : papier/livre/bibliothèque, épuré, couleurs claires ("light academia", fiche de bibliothèque pour signup/login). Design-first : `DB.dbml` (schéma BDD), `docs/API.yml` (contrat OpenAPI). Workflow : **TDD** — écrire les tests vitest AVANT le handler, puis `pnpm test` doit être vert.
+Plateforme de **romans interactifs** (histoires à choix multiples, graphe de nœuds). Stack : **Next.js 16 (App Router) + Drizzle ORM v1.0-rc + Supabase (auth + local dev) + PostgreSQL + Tailwind v4 + vitest**. Style visuel : **indéterminé — en attente d'un avis design extérieur**, ne pas figer de direction avant son retour. Design-first : `DB.dbml` (schéma BDD), `docs/API.yml` (contrat OpenAPI). Workflow : **TDD** — écrire les tests vitest AVANT le handler, puis `pnpm test` doit être vert.
 
 **LIRE `AGENTS.md` (racine)** : régénéré par `next dev`, prévient que Next 16 a des breaking changes. **Toujours consulter `node_modules/next/dist/docs/`** avant d'écrire du code Next — APIs/déprecations divergent des habitudes.
 
@@ -29,7 +29,7 @@ Plateforme de **romans interactifs** (histoires à choix multiples, graphe de n�
 
 ## Erreurs rencontrées & fixes (ne pas reproduire)
 
-1. **500 sans body** = exception avant les branches d'erreur. Causes vues : variable d'env `undefined` (mismatch nom : `.env` = `NEXT_SUPABASE_PUBLISHABLE_KEY`, code = `NEXT_PUBLIC_...`), table absente (reset sans migration), `db.select(username)` (string au lieu de colonne Drizzle).
+1. **500 sans body** = exception avant les branches d'erreur. Causes vues : variable d'env `undefined` (mismatch nom : `.env` = `PUBLISHABLE_KEY`, code = `...`), table absente (reset sans migration), `db.select(username)` (string au lieu de colonne Drizzle).
 2. **`db:reset` vide la base** si aucune migration dans `supabase/migrations/` — le push ne suffit pas, il faut les migrations SQL.
 3. **drizzle-kit en shell non-TTY** (agent/CI) : prompts interactifs échouent. `push` demande "create or rename table" pour TOUTES les tables Supabase (`auth.*`, `realtime.*`) → configurer `schemaFilter: ['public']` dans `drizzle.config.ts`.
 4. **Magic link persistant** : templates par défaut Supabase → surcharger `[auth.email.template.confirmation]` **ET** `[auth.email.template.magic_link]` dans `supabase/config.toml` avec `{{ .Token }}` (pas `.Code` ni `.ConfirmationURL`), redémarrage complet (`stop`+`start`), pas `restart`.
@@ -49,6 +49,7 @@ Plateforme de **romans interactifs** (histoires à choix multiples, graphe de n�
 18. **`z.string().max(1)` ≠ `.min(1)`** : commit "custom zod error message" avait écrit `max(1)` pour interdire le vide → tout blurb non vide rejeté 400. Relire les rules après un changement de messages (tests intégration passés à travers : le 400 du PUT était caché par un skip en amont).
 19. **Delete profile = user GoTrue d'abord, profil ensuite** : `admin.deleteUser` (SECRET_KEY) puis delete Drizzle. GoTrue `deleteUser` d'un user inexistant → `{ data: { user: null }, error: 404 "user_not_found" }` — relayer le statut réel, pas un 401 générique. Rate limit TOUJOURS sur `user.id` après auth (jamais sur l'id d'URL : sinon DoS du quota d'autrui). `signOut()` sur le client admin = no-op (session null, pas de cookies).
 20. **CI + clés Supabase** : `supabase status -o env` expose `SECRET_KEY` (et `SERVICE_ROLE_KEY`) — à exporter pour tout endpoint admin (`SUPABASE_SECRET_KEY`). Les noms `RATE_LIMIT_*` de ci.yml doivent matcher `rate-limit.ts` exactement (`RATE_LIMIT_STORY` mort → `RATE_LIMIT_STORY_CREATION`, `RATE_LIMIT_DELETE` etc.).
+21. **Env Supabase SANS `NEXT_PUBLIC_`** : les clients sont tous server-only (`cookies()`, admin) → variables `SUPABASE_URL` / `SUPABASE_PUBLISHABLE_KEY` / `SUPABASE_SECRET_KEY` (renommées le 2026-10-26, `.env` + `.env.example` + ci.yml). Repréfixer en `NEXT_PUBLIC_` UNIQUEMENT si un `createBrowserClient` apparaît (valeur alors inlinée dans le bundle navigateur — jamais pour la `SECRET_KEY`).
 
 ## Entretien de ce fichier (rôle de l'agent)
 

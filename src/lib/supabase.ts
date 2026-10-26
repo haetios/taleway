@@ -6,7 +6,7 @@ import { s401, s500 } from "./responses"
 
 export function getSupabaseAdminClient() {
   return createClient(
-    process.env.NEXT_PUBLIC_SUPABASE_URL!,
+    process.env.SUPABASE_URL!,
     process.env.SUPABASE_SECRET_KEY!,
     {
       auth: {
@@ -21,8 +21,8 @@ export async function getSupabaseServerClient() {
   const cookieStore = await cookies()
 
   return createServerClient(
-    process.env.NEXT_PUBLIC_SUPABASE_URL!,
-    process.env.NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY!,
+    process.env.SUPABASE_URL!,
+    process.env.SUPABASE_PUBLISHABLE_KEY!,
     {
       cookies: {
         getAll() {
