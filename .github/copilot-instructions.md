@@ -8,6 +8,8 @@ Plateforme de **romans interactifs** (histoires à choix multiples, graphe de n�
 
 ## Règles de travail
 
+- **Ne JAMAIS modifier `TODO.md`** — il appartient au développeur.
+- **Ne jamais faire les commits** : l'agent propose un message de commit, le développeur commit lui-même.
 - **Après TOUT changement d'API/route** : `pnpm test` (les tests tapent le dev server sur :3000 + Supabase local). Prérequis : `next dev` lancé, `pnpm db:start` fait.
 - **Synchro docs/tests/ci = responsabilité de l'agent** : après tout changement de route/handler/schéma, l'agent DOIT vérifier et mettre à jour `docs/API.yml` (contrat OpenAPI : paths, statuts, schemas) et `DB.dbml` (si le schéma BDD bouge). Idem pour la ci.yml et les tests : un nouveau comportement = un test qui le couvre ; un comportement changé = le test ajusté. Ne jamais laisser code, docs et tests diverger — c'est l'agent qui vérifie cette synchronisation à chaque changement, pas le développeur.
 - **Après tout changement de `src/db/schema.ts`** : `pnpm db:gen` (historique versionné dans `drizzle/`) — le schéma est appliqué par `drizzle-kit push` (`pnpm db:push` ou `pnpm db:reset`), PAS par des SQL copiés dans supabase (dossier migrations supprimé, workflow à une seule source de vérité).
