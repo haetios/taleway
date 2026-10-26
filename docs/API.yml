@@ -88,6 +88,26 @@ paths:
         '409':
           $ref: '#/components/responses/Conflict'
 
+  /api/auth/logout:
+    post:
+      summary: Se déconnecter (appareil courant)
+      description: |
+        Invalide la session de l'appareil courant (scope `local`) et supprime
+        le cookie `sb-...`. Les autres appareils restent connectés.
+        Sans session : 200 (idempotent — rien à invalider).
+      tags: [Auth]
+      security:
+        - cookieAuth: []
+      responses:
+        '200':
+          description: Déconnecté (ou déjà déconnecté)
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '429':
+          $ref: '#/components/responses/TooManyRequests'
+        '500':
+          $ref: '#/components/responses/InternalServerError'
+
   /api/story:
     post:
       summary: Créer une histoire
@@ -264,10 +284,35 @@ paths:
                 properties:
                   data:
                     $ref: '#/components/schemas/Profile'
+        '409':
+          $ref: '#/components/responses/Conflict'
+
+    delete:
+      summary: Supprimer définitivement son compte
+      description: |
+        Auto-suppression uniquement : l'id du chemin doit être celui de
+        l'utilisateur authentifié (sinon 403). Supprime le compte GoTrue,
+        la fiche profil, les bookmarks (cascade FK) et détache les histoires
+        (profile_id → NULL, elles restent en ligne). Les sessions de tous les
+        appareils sont invalidées. Irréversible.
+      tags: [Profile]
+      security:
+        - cookieAuth: []
+      responses:
+        '204':
+          description: Compte supprimé
         '400':
           $ref: '#/components/responses/BadRequest'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
         '404':
           $ref: '#/components/responses/NotFound'
+        '429':
+          $ref: '#/components/responses/TooManyRequests'
+        '500':
+          $ref: '#/components/responses/InternalServerError'
 
   /api/profile/stories:
     get:
@@ -387,6 +432,18 @@ components:
             $ref: '#/components/schemas/Error'
     Conflict:
       description: Conflit (titre ou username déjà pris) (409)
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/Error'
+    Forbidden:
+      description: Interdit — ressource d'autrui (403)
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/Error'
+    TooManyRequests:
+      description: Rate limit dépassé (429, header Retry-After)
       content:
         application/json:
           schema:

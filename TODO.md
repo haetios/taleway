@@ -34,6 +34,7 @@
 - [X] Rajouter un anti-spam au niveau de l'API (rate-limit)
 
 - [X] API : POST    /auth/logout
+- [X] TESTS : Ajouter des tests pour API -> POST `/auth/logout`
 
 - [X] Refactor !!!!
     - Supabase user
@@ -41,14 +42,9 @@
 - [X] Commentaires !!!!
 
 - [X] API : DELETE  /profile/ID
+- [X] TESTS : Ajouter des tests pour API -> DELETE `/profile/ID`
 
 - [X] Ajouter messages d'erreurs personnalisés pour les validations Zod
-
-- [ ] Demander à l'IA de :
-    - compacter la session
-    - Vérifier le code modifié depuis la dernière fois (git log) et trouver de possible bugs dans les 2 nouveaux endpoints ("POST /auth/logout" et "DELETE /profile/ID")
-    - Trouver le bug avec les tests : Les tests parfois ne fonctionnent pas sans que rien ne change (skipped avec erreur : Aucun code OTP reçu par bmpostauthor-1792764679690_6yee@taleway.dev dans les 10000ms)
-    - générer les tests pour "POST /auth/logout" et "DELETE /profile/ID"
 
 ---
 

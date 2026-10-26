@@ -4,7 +4,7 @@ import { cookies } from "next/headers"
 import { NextResponse } from "next/server"
 import { s401, s500 } from "./responses"
 
-export async function getSupabaseAdminClient() {
+export function getSupabaseAdminClient() {
   return createClient(
     process.env.NEXT_PUBLIC_SUPABASE_URL!,
     process.env.SUPABASE_SECRET_KEY!,

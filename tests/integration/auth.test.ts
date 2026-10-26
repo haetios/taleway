@@ -1,5 +1,5 @@
-import { describe, expect, it, beforeAll } from "vitest";
-import { clearMailpit, getOtpCode } from "../helpers/mailpit";
+import { describe, expect, it } from "vitest";
+import { getOtpCode } from "../helpers/mailpit";
 import { post, sessionCookie } from "../helpers/auth";
 
 describe("POST /api/auth", () => {
@@ -53,10 +53,10 @@ describe("POST /api/auth/verify", () => {
 });
 
 describe("POST /api/auth/profile", () => {
-  beforeAll(async () => {
-    await clearMailpit();
-  });
-
+  // PAS de clearMailpit() ici : les fichiers de test tournent en parallèle et
+  // vider la boîte effacerait les OTP en vol des autres suites (bug flaky
+  // "Aucun code OTP reçu"). Les emails étant uniques par run, le vidage
+  // n'apporte rien.
   it("circuit complet — session, profil, conflit", async () => {
     // Identifiants uniques par run : la suite doit être rejouable sans db:reset
     // (les runs précédents laissent leurs données dans la vraie base)

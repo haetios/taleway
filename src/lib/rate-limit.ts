@@ -57,3 +57,10 @@ export const settingsLimiter = new RateLimiterRedis({
     points: Number(process.env.RATE_LIMIT_SETTINGS ?? 5),
     duration: 60
 });
+
+export const logoutLimiter = new RateLimiterRedis({
+    storeClient: redis,
+    keyPrefix: "rl_logout",
+    points: Number(process.env.RATE_LIMIT_LOGOUT ?? 10),
+    duration: 60
+})

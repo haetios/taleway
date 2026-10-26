@@ -40,6 +40,16 @@ export function s401(detail?: string) {
     })
 }
 
+export function s403(detail?: string) {
+    return NextResponse.json({
+        title: 'Forbidden',
+        status: 403,
+        detail: detail ?? 'Forbidden'
+    }, {
+        status: 403
+    })
+}
+
 export function s404(detail?: string) {
     return NextResponse.json({
         title: 'Not Found',

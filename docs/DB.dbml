@@ -2,13 +2,14 @@ table profiles {
     id uuid [pk]
     username varchar(255) [unique, not null]
     bio varchar(255)
+    role profile_roles [not null, default: 'user']
     created_at timestamp [not null]
     updated_at timestamp [not null]
 }
 
 table stories {
     id integer [pk]
-    profile_id uuid [ref: > profiles.id, not null]
+    profile_id uuid [ref: > profiles.id, delete: set null]
     title varchar(255) [not null]
     slug varchar(255) [unique, not null]
     blurb text
@@ -23,8 +24,8 @@ table stories {
 
 table bookmarks {
     id integer [pk]
-    profile_id uuid [ref: > profiles.id, not null]
-    story_id integer [ref: > stories.id, not null]
+    profile_id uuid [ref: > profiles.id, not null, delete: cascade]
+    story_id integer [ref: > stories.id, not null, delete: cascade]
     node_id text [not null]
     variables json
     created_at timestamp [not null]
@@ -51,6 +52,12 @@ enum story_status {
   draft
   published
   archived
+}
+
+enum profile_roles {
+  user
+  mod
+  admin
 }
 
 enum categories {
