@@ -1,5 +1,5 @@
 import Link from "next/link";
-import PrimaryButton from "../ui/PrimaryButton";
+import Button from "../ui/Button";
 
 export default function Header() {
     return(
@@ -9,7 +9,7 @@ export default function Header() {
             </div>
 
             <div>
-                <PrimaryButton href="/auth" content="Se connecter" />
+                <Button type="primary" href="/auth" content="Se connecter" />
             </div>
         </header>
     )
