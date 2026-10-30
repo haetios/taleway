@@ -1,23 +1,54 @@
 @import "tailwindcss";
 
 :root {
-  --background: #ffffff;
-  --foreground: #171717;
+  --background: #0D111B;
+  --surface: #171D2B;
+  --surface-card: #222B3D;
+  --surface-input: #101B2D;
+
+  --primary: #B6F34A;
+  --primary-hover: #D0FF63;
+
+  --secondary-pink: #E83E98;
+  --secondary-purple: #8B5CF6;
+  --secondary-cyan: #39BDF8;
+
+  --foreground: #F5F7FA;
+  --muted: #A5AEC0;
+  --border: #263B57;
+
+  --success: #36D399;
+  --warning: #FBBF24;
+  --danger: #FB5575;
 }
 
 @theme inline {
   --color-background: var(--background);
   --color-foreground: var(--foreground);
+
+  --color-surface: var(--surface);
+  --color-card: var(--surface-card);
+  --color-input: var(--surface-input);
+
+  --color-primary: var(--primary);
+  --color-primary-hover: var(--primary-hover);
+  --color-disabled: var(--muted);
+
+  --color-secondary-pink: var(--secondary-pink);
+  --color-secondary-purple: var(--secondary-purple);
+  --color-secondary-cyan: var(--secondary-cyan);
+
+  --color-border: var(--border);
+
+  --color-success: var(--success);
+  --color-warning: var(--warning);
+  --color-danger: var(--danger);
+
   --font-sans: var(--font-geist-sans);
   --font-mono: var(--font-geist-mono);
 }
 
-@media (prefers-color-scheme: light) {
-  :root {
-    --background: #0a0a0a;
-    --foreground: #ededed;
-  }
-}
+@media (prefers-color-scheme: dark) {}
 
 body {
   background: var(--background);

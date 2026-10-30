@@ -12,13 +12,13 @@
     "db:push": "drizzle-kit push",
     "db:migrate": "drizzle-kit migrate",
     "db:stop": "supabase stop",
+    "db:reset": "supabase stop --no-backup; supabase start; drizzle-kit push",
 
     "redis:up": "docker compose up -d redis",
     "redis:stop": "docker compose down redis",
 
     "test": "vitest run",
     "test:watch": "vitest",
-    "db:reset": "supabase stop --no-backup; supabase start; drizzle-kit push",
 
     "lint": "eslint"
   },
@@ -38,6 +38,8 @@
     "zod": "^4.6.7"
   },
   "devDependencies": {
+    "@iconify/json": "^2.2.550",
+    "@iconify/react": "^6.0.3",
     "@tailwindcss/turbopack": "^4",
     "@types/node": "^20",
     "@types/pg": "^8.23.1",
@@ -51,6 +53,7 @@
     "tailwindcss": "^4",
     "tsx": "^4.23.15",
     "typescript": "^5",
+    "unplugin-icons": "^24.0.0",
     "vitest": "^5.0.5"
   },
   "packageManager": "pnpm@12.14.0"

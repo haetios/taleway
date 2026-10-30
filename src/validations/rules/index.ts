@@ -9,6 +9,7 @@ import { coverRule } from "./cover"
 import { graphRule } from "./graph"
 import { profileIdRule } from "./profile-id"
 import { bioRule } from "./bio";
+import { oauthProviderRule } from "./oauth-provider";
 
 export {
     blurbRule,
@@ -21,5 +22,6 @@ export {
     coverRule,
     graphRule,
     profileIdRule,
-    bioRule
+    bioRule,
+    oauthProviderRule
 }

@@ -108,6 +108,42 @@ paths:
         '500':
           $ref: '#/components/responses/InternalServerError'
 
+  /api/auth/oauth/{provider}:
+    get:
+      summary: Démarrer une connexion OAuth (Discord/Google)
+      description: |
+        Redirige le navigateur vers l'écran de consentement du provider
+        (PKCE : verifier stocké en cookie). Au retour, le provider atterrit
+        sur /api/auth/callback.
+      tags: [Auth]
+      parameters:
+        - name: provider
+          in: path
+          required: true
+          schema:
+            type: string
+            enum: [discord, google]
+      responses:
+        '307':
+          description: Redirection vers l'URL d'autorisation du provider
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '500':
+          $ref: '#/components/responses/InternalServerError'
+
+  /api/auth/callback:
+    get:
+      summary: Retour OAuth — échange du code contre une session
+      description: |
+        Appelé par le provider après consentement (`?code=...`). Échange le
+        code contre une session (cookie `sb-...`) puis redirige vers /auth.
+        En cas d'échec : redirection vers /auth?error=... (le navigateur ne
+        lit pas le problem+json sur une redirection).
+      tags: [Auth]
+      responses:
+        '307':
+          description: Redirection vers /auth (succès) ou /auth?error=... (échec)
+
   /api/story:
     post:
       summary: Créer une histoire

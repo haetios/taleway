@@ -44,7 +44,6 @@
 
 ### Front-end
 
-- [ ] PENPOT (figma open source) - style papier, livre, bibliothèque, épuré, couleurs claires, ...
 - [ ] Préparer composants (boutons, champs, etc...)
 - [ ] Ajouter une page de connexion/inscription fonctionnelle pour :
 
@@ -58,17 +57,22 @@
 - [ ] Ajouter page de profil et de paramètres
 - [ ] Ajouter 3 romans interactifs fonctionnels (enquête, romance, horreur)
 - [ ] Mentions légales + politique de confidentialité + CGU claires
-- [ ] Mettre en production (Upstash, Supabase, Resend, Vercel)
+- [ ] Créer les apps OAuth : [Discord](https://discord.com/developers/applications) + [Google](https://console.cloud.google.com/apis/credentials)
+- [ ] Ajouter les variables dans le .env
+- [ ] Mettre en recette (Upstash, Supabase, Resend, Vercel)
+- [ ] Tester !
+- [ ] Mettre en production
 
 ## Lancement silencieux
 
 - [ ] Créer tuto FR sur Youtube
 - [ ] 10-30 auteurs à la main (Discord, Reddit, Forums, ...)
+- [ ] Permettre l'importation d'histoire (Twine, Twee 3, Harlowe, SugarCube, Ink) (conversion native ou pas ?)
 
 ## Lancement public
 
 - [ ] Annonces communautaires (Reddit, X, Product Hunt, ...) + "trailer"
-- [ ] Discuter avec auteur actif
+- [ ] Discuter avec auteurs actifs
 
 ## Monétisation
 
@@ -76,6 +80,7 @@
 - [ ] Création micro-entreprise
 - [ ] Ecriture des CGV
 - [ ] Préparation des factures
+- [ ] Mise en prod
 
 ## Montée en gamme
 
